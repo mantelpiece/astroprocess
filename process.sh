@@ -18,10 +18,6 @@ siril_w () { siril-cli -s <(echo "$*") >&2; }
 # Initialise
 #
 imagingPath=
-lightsPath="Lights"
-biasesPath="Biases"
-flatsPath="Flats"
-darksPath="Darks"
 session=
 #masterBias="/mnt/c/Users/Brendan/Documents/astrophotography/Imaging/calibration_library/bias/iso800/master-bias_iso800_134frames.fit"
 masterBias=
@@ -48,7 +44,10 @@ done
 currentDir=$(pwd)
 stackName="stack_$(date +"%Y-%m-%dT%H%M.fit")"
 [[ $stackName =~ "stack_" ]] || { die "Failed to generate output stack name"; }
-
+lightsPath="${lightsPath:-$imagingPath/Lights}"
+biasesPath="${biasesPath:-$imagingPath/Biases}"
+flatsPath="${flatsPath:-$imagingPath/Flats}"
+darksPath="${darksPath:-$imagingPath/Darks}"
 
 #
 # Configuration...
@@ -58,7 +57,7 @@ info "**** Processing configuration ****"
 #
 # Master Flat
 #
-maybeMasterFlat="${masterFlat:-$imagingPath/$flatsPath/master-flat.fit}"
+maybeMasterFlat="${masterFlat:-$flatsPath/master-flat.fit}"
 echo "master flat:
   .. checking $maybeMasterFlat"
 if [[ -f "$maybeMasterFlat" ]]; then
@@ -80,7 +79,7 @@ if [[ -n "$masterFlat" ]]; then
   echo -e "\nmaster bias:
   .. not required as master flat already exists"
 else
-  maybeMasterBias="${masterBias:-"$imagingPath/$biasesPath/master-bias.fit"}"
+  maybeMasterBias="${masterBias:-"$biasesPath/master-bias.fit"}"
   echo -e "\nmaster bias:
   .. checking $maybeMasterBias"
   if [[ -f "$maybeMasterBias" ]]; then
@@ -95,7 +94,7 @@ fi
 #
 # Master Darks
 #
-maybeMasterDark="${masterDark:-$imagingPath/$darksPath/master-dark.fit}"
+maybeMasterDark="${masterDark:-$darksPath/master-dark.fit}"
 echo -e "\nmaster dark:
   .. checking $maybeMasterDark"
 if [[ -f "$maybeMasterDark" ]]; then
@@ -217,7 +216,7 @@ echo "$preprocess"
 info "\n**** Begin light processing ****"
 
 (
-  cd "$imagingPath/$lightsPath"
+  cd "$lightsPath"
     info "\n**** Converting and preprocessing lights ****"
   if ! siril_w "$preprocess"; then
     rm -f light_* pp_light_*
