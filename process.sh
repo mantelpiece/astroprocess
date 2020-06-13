@@ -9,21 +9,22 @@ errr () { echo -e "\e[31m$*\e[0m"; }
 die () { errr "${1:-""}" >&2; exit "${2:-1}"; }
 usage () { die "\e[0m$0 -p IMAGING_PATH [-b MASTER_BIAS] [-f MASTER_FLAT] [-d MASTER_DARK]"; }
 
+
 hash siril 2>/dev/null || { die "Mising dep: siril"; }
-
-
 siril_w () { siril-cli -s <(echo "$*") >&2; }
 
 
-
+#
 # Initialise
+#
 imagingPath=
 lightsPath="Lights"
-biasPath="Biases"
+biasesPath="Biases"
 flatsPath="Flats"
 darksPath="Darks"
 session=
-masterBias="/mnt/c/Users/Brendan/Documents/astrophotography/Imaging/calibration_library/bias/iso800/master-bias_iso800_134frames.fit"
+#masterBias="/mnt/c/Users/Brendan/Documents/astrophotography/Imaging/calibration_library/bias/iso800/master-bias_iso800_134frames.fit"
+masterBias=
 masterFlat=
 masterDark=
 while getopts "p:L:F:D:B:b:f:d:S" i; do
@@ -45,54 +46,87 @@ done
 [[ -n "$imagingPath" ]] || { usage; }
 [[ -d $imagingPath ]] || { die "$imagingPath not found"; }
 currentDir=$(pwd)
-stackName="stack_$(date +"%Y-%m-%dT%H:%m.fit")"
+stackName="stack_$(date +"%Y-%m-%dT%H%M.fit")"
 [[ $stackName =~ "stack_" ]] || { die "Failed to generate output stack name"; }
 
+
+#
+# Configuration...
+#
 info "**** Processing configuration ****"
 
-if [[ -z "$masterBias" ]]; then
-  die "No master bias"
-else
-  echo "master bias:
-    using $masterBias"
-fi
-
-maybeMasterFlat="$currentDir/$imagingPath/$flatsPath/master-flat.fit"
+#
+# Master Flat
+#
+maybeMasterFlat="${masterFlat:-$imagingPath/$flatsPath/master-flat.fit}"
+echo "master flat:
+  .. checking $maybeMasterFlat"
 if [[ -f "$maybeMasterFlat" ]]; then
   masterFlat="$maybeMasterFlat"
-  echo "master flat:
-    found $masterFlat... use as master flat"
+  echo "  .. found $masterFlat"
 else
-  echo "master flat - no master flat found:
-    processing $imagingPath/$flatsPath"
+  masterFlat=
+  flatsDir="$imagingPath/$flatsPath"
+  if [[ ! -d "$flatsDir" ]]; then
+    die "  .. flats directory $flatsDir not found"
+  fi
+  echo "  .. no master flat found - processing $imagingPath/$flatsPath"
 fi
 
-maybeMasterDark="$currentDir/$imagingPath/Darks/master-dark.fit"
+#
+# Master Bias
+#
+if [[ -n "$masterFlat" ]]; then
+  echo -e "\nmaster bias:
+  .. not required as master flat already exists"
+else
+  maybeMasterBias="${masterBias:-"$imagingPath/$biasesPath/master-bias.fit"}"
+  echo -e "\nmaster bias:
+  .. checking $maybeMasterBias"
+  if [[ -f "$maybeMasterBias" ]]; then
+    masterBias=$maybeMasterBias
+    echo "  .. using $masterBias"
+  else
+    echo "  .. no master found - processing $imagingPath/$biasesPath"
+  fi
+fi
+
+
+#
+# Master Darks
+#
+maybeMasterDark="${masterDark:-$imagingPath/$darksPath/master-dark.fit}"
+echo -e "\nmaster dark:
+  .. checking $maybeMasterDark"
 if [[ -f "$maybeMasterDark" ]]; then
   masterDark="$maybeMasterDark"
-  echo "master dark:
-    found $masterDark... use as master dark"
+  echo "  .. found $masterDark"
 else
-  echo "master dark - no master dark found:
-    processing $imagingPath/$darksPath"
+  echo "  .. no master dark found - processing $imagingPath/$darksPath"
 fi
 
-echo "processing lights:
-    $imagingPath/$lightsPath"
 
-[[ -n "$session" ]] && echo -e "\nrunning in session mode, only pre-processing will be applied to lights and they will not be registered or stacked"
+#
+# Lights
+#
+echo -e "\nlights:
+  .. processing $imagingPath/$lightsPath"
 
-
-echo -e "\nOutput stack will be $imagingPath/Stacks/$stackName"
+if [[ -n "$session" ]]; then
+  echo -e "\nrunning in session mode, only pre-processing will be applied to lights and they will not be registered or stacked"
+else
+  echo -e "\nOutput stack will be $imagingPath/Stacks/$stackName"
+fi
 
 echo -ne "\n\nContinue processing? .... "
 read -r input
 
 
-
-if [[ -z "$masterBias" ]] && [[ -n "$masterFlat" ]]; then
+#
+# Processing biases
+#
+if [[ -z "$masterBias" ]] && [[ -z "$masterFlat" ]]; then
   info "\n**** Generating master bias ****"
-  masterBias="$(generateMasterBias)"
   biasesScript="convertraw bias_
 stack bias_ rej 3 3 -nonorm -out=master-bias.fit"
 
@@ -106,19 +140,21 @@ $biasesScript"
       die "Siril error generating master bias"
     fi
     rm -f bias_*
-    echo "$(pwd)/master-bias.fit"
   )
 
-  masterBias="$biasesPath/master-bias.fit"
+  masterBias="../$biasesPath/master-bias.fit"
   good "Created master bias $masterBias"
 fi
 
 
+#
+# Processing flats
+#
 if [[ -z "$masterFlat" ]]; then
   info "\n**** Generating master flat ****"
 
   flatsScript="convertraw flat_
-preprocess flat_ -bias=$masterBias
+preprocess flat_ -bias=$currentDir/$masterBias
 stack pp_flat_ rej 3 3 -norm=mul -out=master-flat.fit"
   echo "Master flat generation script
 $flatsScript"
@@ -137,6 +173,9 @@ fi
 
 
 
+#
+# Processing darks
+#
 if [[ -z "$masterDark" ]]; then
   info "\n**** Generating master dark ****"
 
@@ -158,9 +197,12 @@ fi
 
 
 
+#
+# Processing lights
+#
 info "\n**** Processing lights ****"
   preprocess="convertraw light_
-preprocess light_ -dark=$masterDark -flat=$masterFlat -cfa -equalize_cfa -debayer"
+preprocess light_ -dark=$currentDir/$masterDark -flat=$currentDir/$masterFlat -cfa -equalize_cfa -debayer"
   register="register pp_light_"
   stack="stack r_pp_light_ rej 3 3 -norm=addscale -out=../Stacks/$stackName"
 
@@ -200,4 +242,8 @@ info "\n**** Begin light processing ****"
 
 )
 good "**** Success ****"
-good "Final stack $imagingPath/Stacks/final-stack.fit"
+if [[ -z "$session" ]]; then
+  echo "Final stack $imagingPath/Stacks/$stackName"
+else
+  echo "preprocessed lights are in $imagingPath/Lights"
+fi
