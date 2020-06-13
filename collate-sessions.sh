@@ -11,7 +11,7 @@ session1="./2020-05-18/Lights/pp_light_*.fit"
 session2="./2020-05-25/Lights/pp_light_*.fit"
 processingDir="./Processing"
 
-stackName="stack_$(date +"%Y-%m-%dT%R").fit"
+stackName="stack_$(date +"%Y-%m-%dT%H%M").fit"
 lightsScript="register pp_light_
 stack r_pp_light_ rej 3 3 -norm=addscale -out=./$stackName"
 
@@ -30,7 +30,7 @@ echo -e "\noutput stack: $stackName"
 echo -e "\nprocessing script:\n$lightsScript"
 
 
-echo -en "\n\n continue processing (ctrl-c to cancel)?..."
+echo -en "\n\ncontinue processing (ctrl-c to cancel)?..."
 read -r throwaway
 
 
@@ -39,6 +39,7 @@ info "\n\n**** Moving preprocessed lights to working dir $outputDir"
 mkdir -p $processingDir
 n=0
 for x in $session1 $session2; do
+  [[ -f "$x" ]] || continue
   # ln -s "$x" "$processingDir/pp_light_$(printf '%05d' $n).fit"
   mv "$x" "$processingDir/pp_light_$(printf '%05d' $n).fit"
   n=$(( n + 1))
