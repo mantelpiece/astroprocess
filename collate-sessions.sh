@@ -4,11 +4,15 @@ die () { echo "$1" >&2; exit 1; }
 good () { echo -e "\e[32m$*\e[0m"; }
 info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
-siril_w () { siril-cli -s <(echo "$*") >&2; }
 
 
-session1="./2020-05-18/Lights/pp_light_*.fit"
-session2="./2020-05-25/Lights/pp_light_*.fit"
+
+siril_w () { siril -s <(echo "$*") >&2; }
+
+
+session1="./2020-06-10/Lights/pp_light_*.fit"
+session2="./2020-06-12/Lights/pp_light_*.fit"
+session3="./2020-06-17/Lights/pp_light_*.fit"
 processingDir="./Processing"
 
 stackName="stack_$(date +"%Y-%m-%dT%H%M").fit"
@@ -22,6 +26,8 @@ echo "Session 1:"
 echo "    preprocessed lights: $session1"
 echo "Session 2:"
 echo "    preprocessed lights: $session2"
+echo "Session 3:"
+echo "    preprocessed lights: $session3"
 
 
 echo -e "\n\nProcessing"
@@ -31,14 +37,13 @@ echo -e "\nprocessing script:\n$lightsScript"
 
 
 echo -en "\n\ncontinue processing (ctrl-c to cancel)?..."
-read -r throwaway
-
+read -r
 
 
 info "\n\n**** Moving preprocessed lights to working dir $outputDir"
 mkdir -p $processingDir
 n=0
-for x in $session1 $session2; do
+for x in $session1 $session2 $session3; do
   [[ -f "$x" ]] || continue
   # ln -s "$x" "$processingDir/pp_light_$(printf '%05d' $n).fit"
   mv "$x" "$processingDir/pp_light_$(printf '%05d' $n).fit"

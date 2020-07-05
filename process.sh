@@ -11,7 +11,11 @@ usage () { die "\e[0m$0 -p IMAGING_PATH [-b MASTER_BIAS] [-f MASTER_FLAT] [-d MA
 
 
 hash siril 2>/dev/null || { die "Mising dep: siril"; }
-siril_w () { siril-cli -s <(echo "$*") >&2; }
+if hash siril-cli 2>/dev/null; then
+  siril_w () { siril-cli -s <(echo "$*") >&2; }
+else
+  siril_w () { siril -s <(echo "$*") >&2; }
+fi
 
 
 #
@@ -65,11 +69,11 @@ if [[ -f "$maybeMasterFlat" ]]; then
   echo "  .. found $masterFlat"
 else
   masterFlat=
-  flatsDir="$imagingPath/$flatsPath"
+  flatsDir="$flatsPath"
   if [[ ! -d "$flatsDir" ]]; then
     die "  .. flats directory $flatsDir not found"
   fi
-  echo "  .. no master flat found - processing $imagingPath/$flatsPath"
+  echo "  .. no master flat found - processing $flatsDir"
 fi
 
 #
@@ -86,7 +90,7 @@ else
     masterBias=$maybeMasterBias
     echo "  .. using $masterBias"
   else
-    echo "  .. no master found - processing $imagingPath/$biasesPath"
+    echo "  .. no master found - processing $biasesPath"
   fi
 fi
 
@@ -101,7 +105,7 @@ if [[ -f "$maybeMasterDark" ]]; then
   masterDark="$maybeMasterDark"
   echo "  .. found $masterDark"
 else
-  echo "  .. no master dark found - processing $imagingPath/$darksPath"
+  echo "  .. no master dark found - processing $darksPath"
 fi
 
 
@@ -109,7 +113,7 @@ fi
 # Lights
 #
 echo -e "\nlights:
-  .. processing $imagingPath/$lightsPath"
+  .. processing $lightsPath"
 
 if [[ -n "$session" ]]; then
   echo -e "\nrunning in session mode, only pre-processing will be applied to lights and they will not be registered or stacked"
@@ -133,7 +137,7 @@ stack bias_ rej 3 3 -nonorm -out=master-bias.fit"
 $biasesScript"
 
   (
-    cd "$imagingPath/$biasesPath";
+    cd "$biasesPath";
     if ! siril_w "$biasesScript"; then
       rm -f bias_*
       die "Siril error generating master bias"
@@ -141,7 +145,7 @@ $biasesScript"
     rm -f bias_*
   )
 
-  masterBias="../$biasesPath/master-bias.fit"
+  masterBias="$biasesPath/master-bias.fit"
   good "Created master bias $masterBias"
 fi
 
@@ -159,14 +163,14 @@ stack pp_flat_ rej 3 3 -norm=mul -out=master-flat.fit"
 $flatsScript"
 
   (
-    cd "$imagingPath/$flatsPath"
+    cd "$flatsPath"
     if ! siril_w "$flatsScript"; then
       rm -f flat_* pp_flat_*
       die "Siril error processing flats"
     fi
     rm -f flat_* pp_flat_*
   )
-  masterFlat="../$flatsPath/master-flat.fit"
+  masterFlat="$flatsPath/master-flat.fit"
   good "Created master flat $masterFlat"
 fi
 
@@ -184,14 +188,14 @@ stack dark_ rej 3 3 -nonorm -out=master-dark.fit"
 $darksScript"
 
   (
-    cd "$imagingPath/$darksPath";
+    cd "$darksPath";
     if ! siril_w "$darksScript"; then
       rm -f dark_*
       die "Siril error while generating master dark"
     fi
     rm -f dark_*
   )
-  masterDark="../$darksPath/master-dark.fit"
+  masterDark="$darksPath/master-dark.fit"
 fi
 
 
@@ -244,5 +248,5 @@ good "**** Success ****"
 if [[ -z "$session" ]]; then
   echo "Final stack $imagingPath/Stacks/$stackName"
 else
-  echo "preprocessed lights are in $imagingPath/Lights"
+  echo "preprocessed lights are in $lightsPath"
 fi
