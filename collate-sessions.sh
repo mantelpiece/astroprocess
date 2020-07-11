@@ -6,13 +6,13 @@ info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
 
 
-
 siril_w () { siril -s <(echo "$*") >&2; }
 
 
 session1="./2020-06-10/Lights/pp_light_*.fit"
 session2="./2020-06-12/Lights/pp_light_*.fit"
 session3="./2020-06-17/Lights/pp_light_*.fit"
+
 processingDir="./Processing"
 
 stackName="stack_$(date +"%Y-%m-%dT%H%M").fit"
