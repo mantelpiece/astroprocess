@@ -223,15 +223,15 @@ $darksScript"
 fi
 
 
-
 #
 # Processing lights
 #
 info "\n**** Processing lights ****"
   preprocess="convertraw light_
-preprocess light_ -dark=$currentDir/$masterDark -flat=$currentDir/$masterFlat -cfa -equalize_cfa -debayer"
-  register="register pp_light_"
-  stack="stack r_pp_light_ rej 3 3 -norm=addscale -out=$currentDir/$imagingPath/Stacks/$stackName"
+preprocess light_ -cfa -equalize-cfa -debayer -dark=../../$masterDark -flat=../../$masterFlat
+seqcrop pp_light_ 2000 800 2200 2200"
+  register="register cropped_pp_light_ -drizzle"
+  stack="stack r_cropped_pp_light_ rej 3 3 -norm=addscale -out=$currentDir/$imagingPath/Stacks/$stackName"
 
 
 mkdir -p $imagingPath/Stacks
