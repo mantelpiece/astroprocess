@@ -27,6 +27,18 @@ siril_w () ( $sirilBin -s <(echo "$*"); )
 # 4. Region of interest mode?
 # 5. Drizzle?
 
+processingDate="$(date +"%Y-%m-%dT%H%M.fit")"
+
+siril_w () ( $sirilBin -s <(echo "$*"); )
+
+
+# 1. Find callibration masters
+#    a. Path needs to be relative to lights though
+# 2. Path to lights
+# 3. Session mode? Only perform calibration, don't register or stack
+# 4. Region of interest mode?
+# 5. Drizzle?
+
 
 #
 # Initialise
