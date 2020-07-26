@@ -10,17 +10,29 @@ die () { errr "${1:-""}" >&2; exit "${2:-1}"; }
 usage () { die "\e[0m$0 -p IMAGING_PATH [-b MASTER_BIAS] [-f MASTER_FLAT] [-d MASTER_DARK]"; }
 
 
-hash siril 2>/dev/null || { die "Mising dep: siril"; }
 if hash siril-cli 2>/dev/null; then
-  siril_w () { siril-cli -s <(echo "$*") >&2; }
+  sirilBin="siril-cli"
+elif hash siril 2>/dev/null; then
+  sirilBin="siril"
 else
-  siril_w () { siril -s <(echo "$*") >&2; }
+  die "Missing dep: siril"
 fi
+siril_w () ( $sirilBin -s <(echo "$*"); )
+
+
+# 1. Find callibration masters
+#    a. Path needs to be relative to lights though
+# 2. Path to lights
+# 3. Session mode? Only perform calibration, don't register or stack
+# 4. Region of interest mode?
+# 5. Drizzle?
 
 
 #
 # Initialise
 #
+processingDate="$(date +"%Y-%m-%dT%H%M.fit")"
+
 imagingPath=
 session=
 #masterBias="/mnt/c/Users/Brendan/Documents/astrophotography/Imaging/calibration_library/bias/iso800/master-bias_iso800_134frames.fit"
@@ -46,7 +58,7 @@ done
 [[ -n "$imagingPath" ]] || { usage; }
 [[ -d $imagingPath ]] || { die "$imagingPath not found"; }
 currentDir=$(pwd)
-stackName="stack_$(date +"%Y-%m-%dT%H%M.fit")"
+stackName="stack_$processingDate"
 [[ $stackName =~ "stack_" ]] || { die "Failed to generate output stack name"; }
 lightsPath="${lightsPath:-$imagingPath/Lights}"
 biasesPath="${biasesPath:-$imagingPath/Biases}"
@@ -221,7 +233,8 @@ info "\n**** Begin light processing ****"
 
 (
   cd "$lightsPath"
-    info "\n**** Converting and preprocessing lights ****"
+  info "\n**** Converting and preprocessing lights ****"
+
   if ! siril_w "$preprocess"; then
     rm -f light_* pp_light_*
     die "Siril failed during lights preprocessing"
