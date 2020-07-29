@@ -13,3 +13,6 @@ Flats master:
 Darks master:
   Darks master ./tests/no-masters/Darks/master-dark.fit not found
   Generating darks master from directory ./tests/no-masters/Darks
+
+Processing lights:
+  lights directory: ./tests/no-masters/Lights

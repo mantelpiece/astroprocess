@@ -16,14 +16,35 @@ function cdiff() {
 
 scriptDir="$(dirname "$0")"
 
+updateSnapshots=
+while getopts "u" i; do
+  case "$i" in
+    u) updateSnapshots="true" ;;
+    -) break ;;
+    ?) usage ;;
+    *) usage ;;
+  esac
+done
+
 
 runTest () {
-  local cmd="$1"
-  local snapshotFile="$2/snapshot.txt"
+  local theBin="$scriptDir/../stack.sh"
+  local testDir="$1"
+  local stackArgs="${2:-""}"
+
+  local cmd="$theBin $testDir $stackArgs"
+  local snapshotFile="$testDir/snapshot.txt"
+
   [[ -r "$snapshotFile" ]] || { die "Missing snapshot for test $cmd"; }
 
   info "Running test: $cmd"
   local diff=$(cdiff <($cmd) $snapshotFile)
+
+  if [[ -n $updateSnapshots && -n "$diff" ]]; then
+    echo "Updating snapshot for $cmd"
+    $cmd > $snapshotFile
+    return
+  fi
 
   if [[ -z "$diff" ]]; then
     good "Pass"
@@ -39,13 +60,15 @@ runTest () {
 }
 
 theBin="$scriptDir/../stack.sh"
-runTest "$theBin ./tests/has-masters" "tests/has-masters"
-runTest "$theBin ./tests/no-masters" "tests/no-masters"
-runTest "$theBin ./tests/no-flats-master" "tests/no-flats-master"
-runTest "$theBin ./tests/no-flats-biases-masters" "tests/no-flats-biases-masters"
-runTest "$theBin ./tests/no-biases-master" "tests/no-biases-master"
+runTest "./tests/has-masters"
+runTest "./tests/no-masters"
+runTest "./tests/no-flats-master"
+runTest "./tests/no-flats-biases-masters"
+runTest "./tests/no-biases-master"
 
-runTest "$theBin ./tests/precreated-flats-master/
+runTest "./tests/precreated-flats-master"
 
-echo
+#runTest "$theBin ./tests/specific-flats-dir" "tests/precreated-flats-master"
+
+echo ""
 good "Done"

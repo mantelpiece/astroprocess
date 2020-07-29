@@ -57,6 +57,9 @@ generateBias=
 [[ -r "$masterBias" && -n "$biasRequired" ]] || generateBias="true"
 
 
+lightsPath="$imagingDir/Lights"
+
+
 
 #
 # Log configuration
@@ -95,6 +98,11 @@ else
   echo "  Darks master $masterDark not found"
   echo "  Generating darks master from directory $darksPath"
 fi
+
+
+echo
+echo "Processing lights:"
+echo "  lights directory: $lightsPath"
 
 # 1. Find callibration masters
 #    a. Path needs to be relative to lights though

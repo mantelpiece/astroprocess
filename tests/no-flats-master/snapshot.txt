@@ -11,3 +11,6 @@ Flats master:
 
 Darks master:
   Using pre-existing darks master ./tests/no-flats-master/Darks/master-dark.fit
+
+Processing lights:
+  lights directory: ./tests/no-flats-master/Lights
