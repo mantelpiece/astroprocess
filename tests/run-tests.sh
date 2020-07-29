@@ -32,11 +32,12 @@ runTest () {
   local testDir="$1"
   local stackArgs="${2:-""}"
 
-  local cmd="$theBin $testDir $stackArgs"
+  local cmd="$theBin -i $testDir $stackArgs"
   local snapshotFile="$testDir/snapshot.txt"
 
   [[ -r "$snapshotFile" ]] || { die "Missing snapshot for test $cmd"; }
 
+  echo ""
   info "Running test: $cmd"
   local diff=$(cdiff <($cmd) $snapshotFile)
 
@@ -60,15 +61,20 @@ runTest () {
 }
 
 theBin="$scriptDir/../stack.sh"
+# Test that default calibration directories within imaging root are used
 runTest "./tests/has-masters"
 runTest "./tests/no-masters"
 runTest "./tests/no-flats-master"
 runTest "./tests/no-flats-biases-masters"
 runTest "./tests/no-biases-master"
 
-runTest "./tests/precreated-flats-master"
+# Test specifying calibration frame dirs to be used
+runTest "./tests/specific-flats-dir" "-f ./tests/no-flats-master/Flats"
 
-#runTest "$theBin ./tests/specific-flats-dir" "tests/precreated-flats-master"
+
+
+# runTest "./tests/precreated-flats-master"
+
 
 echo ""
 good "Done"

@@ -3,12 +3,10 @@ Current directory: ./tests/..
 Imaging directory: ./tests/precreated-flats-master
 
 Bias master:
-  Biases master ./tests/precreated-flats-master/Biases/master-bias.fit not found
-  Generating biases master from directory ./tests/precreated-flats-master/Biases
+  Biases master not required as flats master exists
 
 Flats master:
-  Flats master ./tests/precreated-flats-master/Flats/master-flat.fit not found
-  Generating flats master from directory ./tests/precreated-flats-master/Flats
+  Using pre-existing darks master ./tests/_precreated/Flats/master-flat.fit
 
 Darks master:
   Using pre-existing darks master ./tests/precreated-flats-master/Darks/master-dark.fit

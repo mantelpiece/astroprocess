@@ -8,7 +8,7 @@ errr () { echo -e "\e[31m$*\e[0m"; }
 
 die () { errr "${1:-""}" >&2; exit "${2:-1}"; }
 # usage () { die "\e[0musage: $0 -p IMAGING_PATH [-b MASTER_BIAS] [-f MASTER_FLAT] [-d MASTER_DARK]"; }
-usage () { die "\e[0musage: $0 IMAGING_DIRECTORY"; }
+usage () { die "\e[0musage: $0 -i IMAGING_DIRECTORY"; }
 
 
 #
@@ -25,6 +25,23 @@ fi
 siril_w () ( $sirilBin -s <(echo "$*") 2>&1 | tee "$processingDate.log"; )
 
 
+#
+# Process CLI arguments
+#
+imagingDir=
+flatsPath=
+while getopts "i:f:" i; do
+  case "$i" in
+    i) imagingDir="${OPTARG%/}" ;;
+    f) flatsPath="${OPTARG%/}" ;;
+    -) break ;;
+    ?) usage ;;
+    *) usage ;;
+  esac
+done
+[[ -n "$imagingDir" ]] || { usage; }
+
+
 
 #
 # Setup processing configuration
@@ -33,17 +50,13 @@ siril_w () ( $sirilBin -s <(echo "$*") 2>&1 | tee "$processingDate.log"; )
 processingDate="$(date +"%Y-%m-%dT%H%M")"
 currentDir="$(dirname "$0")"
 
-imagingDir="${1%/}"
-[[ -n "$imagingDir" ]] || { usage; }
-
-
 darksPath="$imagingDir/Darks"
 masterDark="$darksPath/master-dark.fit"
 generateDark=
 [[ -r "$masterDark" ]] || generateDark="true"
 
 
-flatsPath="$imagingDir/Flats"
+flatsPath="${flatsPath:-"$imagingDir/Flats"}"
 masterFlat="$flatsPath/master-flat.fit"
 generateFlat=
 [[ -r "$masterFlat" ]] || generateFlat="true"
@@ -58,7 +71,6 @@ generateBias=
 
 
 lightsPath="$imagingDir/Lights"
-
 
 
 #
