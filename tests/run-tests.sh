@@ -27,10 +27,12 @@ while getopts "u" i; do
 done
 
 
+isError=
 runTest () {
   local theBin="$scriptDir/../stack.sh"
-  local testDir="$1"
-  local stackArgs="${2:-""}"
+  local title="$1"
+  local testDir="$2"
+  local stackArgs="${3:-""}"
 
   local cmd="$theBin -i $testDir $stackArgs"
   local snapshotFile="$testDir/snapshot.txt"
@@ -38,8 +40,14 @@ runTest () {
   [[ -r "$snapshotFile" ]] || { die "Missing snapshot for test $cmd"; }
 
   echo ""
-  info "Running test: $cmd"
-  local diff=$(cdiff <($cmd) $snapshotFile)
+  info "Running test: $title"
+  local output=
+  if ! output=$($cmd); then
+    errr "Script errored out"
+    return
+  fi
+
+  local diff=$(cdiff <(echo "$output") $snapshotFile)
 
   if [[ -n $updateSnapshots && -n "$diff" ]]; then
     echo "Updating snapshot for $cmd"
@@ -50,11 +58,13 @@ runTest () {
   if [[ -z "$diff" ]]; then
     good "Pass"
   else
+    isError="yes"
     errr "Fail - output did not match snapshot"
 
-    echo "Output:"
+    info "Output:"
     $cmd
     echo
+    info "<actual, >expected"
     echo "$diff"
     exit 1
   fi
@@ -62,19 +72,29 @@ runTest () {
 
 theBin="$scriptDir/../stack.sh"
 # Test that default calibration directories within imaging root are used
-runTest "./tests/has-masters"
-runTest "./tests/no-masters"
-runTest "./tests/no-flats-master"
-runTest "./tests/no-flats-biases-masters"
-runTest "./tests/no-biases-master"
+runTest "All calibration masters exist" "./tests/has-masters"
+runTest "No masters exist, raw subs in default locations" "./tests/no-masters"
+runTest "All masters exist flat master" "./tests/no-flats-master"
+runTest "No flat or bias master" "./tests/no-flats-biases-masters"
+runTest "No bias master" "./tests/no-biases-master"
 
 # Test specifying calibration frame dirs to be used
-runTest "./tests/specific-flats-dir" "-f ./tests/no-flats-master/Flats"
+runTest "Flat subs in specific location" \
+    "./tests/specific-flats-dir" "-f ./tests/no-flats-master/Flats"
 
+# Test specifying calibration master to be used
+runTest "Precreated bias master" \
+    "./tests/precreated-biases-master" \
+    "-b ./tests/_precreated/Biases/master-bias-iso800.fit"
 
+runTest "Precreated master flat" \
+  "./tests/precreated-flats-master" \
+  "-f ./tests/_precreated/Flats/master-flat-iso800.fit"
 
-# runTest "./tests/precreated-flats-master"
+runTest "Precreated dark and flat masters" \
+  "./tests/precreated-masters" \
+  "-f ./tests/_precreated/Flats/master-flat-iso800.fit -d ./tests/_precreated/Darks/master-dark-iso800.fit"
 
 
 echo ""
-good "Done"
+[[ -z "$isError" ]] || errr "Test cases failed" && good "Much success!"

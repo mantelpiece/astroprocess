@@ -1,6 +1,6 @@
 [34m********    Processinging configuration    ********[0m
 Current directory: ./tests/..
-Imaging directory: ./tests/precreated-flats-master
+Imaging directory: ./tests/precreated-masters
 
 Bias master:
   Biases master not required as flats master exists
@@ -9,7 +9,7 @@ Flats master:
   Using pre-existing flats master ./tests/_precreated/Flats/master-flat-iso800.fit
 
 Darks master:
-  Using pre-existing darks master ./tests/precreated-flats-master/Darks/master-dark.fit
+  Using pre-existing darks master ./tests/_precreated/Darks/master-dark-iso800.fit
 
 Processing lights:
-  lights directory: ./tests/precreated-flats-master/Lights
+  lights directory: ./tests/precreated-masters/Lights

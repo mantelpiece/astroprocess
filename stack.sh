@@ -7,8 +7,7 @@ info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
 
 die () { errr "${1:-""}" >&2; exit "${2:-1}"; }
-# usage () { die "\e[0musage: $0 -p IMAGING_PATH [-b MASTER_BIAS] [-f MASTER_FLAT] [-d MASTER_DARK]"; }
-usage () { die "\e[0musage: $0 -i IMAGING_DIRECTORY"; }
+usage () { die "\e[0musage: $0 -i IMAGING_DIR [-b MASTER_BIAS] [-f MASTER_FLAT] [-d MASTER_DARK]"; }
 
 
 #
@@ -29,11 +28,15 @@ siril_w () ( $sirilBin -s <(echo "$*") 2>&1 | tee "$processingDate.log"; )
 # Process CLI arguments
 #
 imagingDir=
-flatsPath=
-while getopts "i:f:" i; do
+userBiases=
+userDarks=
+userFlats=
+while getopts "i:b:d:f:" i; do
   case "$i" in
     i) imagingDir="${OPTARG%/}" ;;
-    f) flatsPath="${OPTARG%/}" ;;
+    b) userBiases="${OPTARG%/}" ;;
+    d) userDarks="${OPTARG%/}" ;;
+    f) userFlats="${OPTARG%/}" ;;
     -) break ;;
     ?) usage ;;
     *) usage ;;
@@ -49,28 +52,50 @@ done
 
 processingDate="$(date +"%Y-%m-%dT%H%M")"
 currentDir="$(dirname "$0")"
-
-darksPath="$imagingDir/Darks"
-masterDark="$darksPath/master-dark.fit"
-generateDark=
-[[ -r "$masterDark" ]] || generateDark="true"
-
-
-flatsPath="${flatsPath:-"$imagingDir/Flats"}"
-masterFlat="$flatsPath/master-flat.fit"
-generateFlat=
-[[ -r "$masterFlat" ]] || generateFlat="true"
-biasRequired=
-[[ -r "$masterFlat" ]] || biasRequired="true"
-
-
-biasesPath="$imagingDir/Biases"
-masterBias="$biasesPath/master-bias.fit"
-generateBias=
-[[ -r "$masterBias" && -n "$biasRequired" ]] || generateBias="true"
-
-
 lightsPath="$imagingDir/Lights"
+[[ -d "$lightsPath" ]] || { die "Failed to find lights directory $lightsPath"; }
+
+# Darks
+darksPath="${userDarks:-"$imagingDir/Darks"}"
+generateDark=
+if [[ -d "$darksPath" ]]; then
+  masterDark="$darksPath/master-dark.fit"
+  [[ -r "$masterDark" ]] || generateDark="true"
+elif [[ -r "$darksPath" ]]; then
+  masterDark="$darksPath"
+else
+  die "Failed to find darks in $darksPath"
+fi
+
+# Flats
+flatsPath="${userFlats:-"$imagingDir/Flats"}"
+generateFlat=
+biasRequired=
+if [[ -d "$flatsPath" ]]; then
+  masterFlat="$flatsPath/master-flat.fit"
+  if [[ ! -r "$masterFlat" ]]; then
+    generateFlat="true"
+    biasRequired="true"
+  fi
+elif [[ -r "$flatsPath" ]]; then
+  masterFlat="$flatsPath"
+else
+  die "Failed to find flats in $flatsPath"
+fi
+
+# Biases
+generateBias=
+if [[ -n "$biasRequired" ]]; then
+  biasesPath="${userBiases:-"$imagingDir/Biases"}"
+  if [[ -d "$biasesPath" ]]; then
+    masterBias="$biasesPath/master-bias.fit"
+    [[ -r "$masterBias" ]] || generateBias="true"
+  elif [[ -r "$biasesPath" ]]; then
+    masterBias="$biasesPath"
+  else
+    die "Failed to find biases in $biasesPath"
+  fi
+fi
 
 
 #
