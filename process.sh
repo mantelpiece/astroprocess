@@ -215,11 +215,14 @@ fi
 #
 # Processing lights
 #
+stack="$currentDir/$imagingPath/Stacks/$stackName"
+flat="$(realpath --relative-to $lightsPath $currentDir/$masterFlat)"
+dark="$(realpath --relative-to $lightsPath $currentDir/$masterDark)"
 info "\n**** Processing lights ****"
   preprocess="convertraw light_
-preprocess light_ -dark=$currentDir/$masterDark -flat=$currentDir/$masterFlat -cfa -equalize_cfa -debayer"
+preprocess light_ -dark=$dark -flat=$flat -cfa -equalize_cfa -debayer"
   register="register pp_light_"
-  stack="stack r_pp_light_ rej 3 3 -norm=addscale -out=$currentDir/$imagingPath/Stacks/$stackName"
+  stack="stack r_pp_light_ rej 3 3 -norm=addscale -out=$stack"
 
 
 mkdir -p $imagingPath/Stacks

@@ -79,7 +79,7 @@ runTest "No flat or bias master" "./tests/no-flats-biases-masters"
 runTest "No bias master" "./tests/no-biases-master"
 
 # Test specifying calibration frame dirs to be used
-runTest "Flat subs in specific location" \
+runTest "Specific flats directory" \
     "./tests/specific-flats-dir" "-f ./tests/no-flats-master/Flats"
 
 # Test specifying calibration master to be used
