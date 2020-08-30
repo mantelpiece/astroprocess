@@ -135,6 +135,7 @@ fi
 
 echo -ne "\n\nContinue processing? .... "
 read -r input
+start=$(date -u +'%s')
 
 
 #
@@ -165,11 +166,12 @@ fi
 #
 # Processing flats
 #
+bias="$(realpath --relative-to $flatsPath $masterBias)"
 if [[ -z "$masterFlat" ]]; then
   info "\n**** Generating master flat ****"
 
   flatsScript="convertraw flat_
-preprocess flat_ -bias=$currentDir/$masterBias
+preprocess flat_ -bias=$bias
 stack pp_flat_ rej 3 3 -norm=mul -out=master-flat.fit"
   echo "Master flat generation script
 $flatsScript"
@@ -266,3 +268,6 @@ if [[ -z "$session" ]]; then
 else
   echo "preprocessed lights are in $lightsPath"
 fi
+end=$(date -u +'%s')
+runtime=$(( end - start ))
+echo "   elapsed time: $(date -d@$runtime -u +'%H:%M:%S')"
