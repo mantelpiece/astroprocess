@@ -7,7 +7,7 @@ info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
 
 die () { errr "${1:-""}" >&2; exit "${2:-1}"; }
-usage () { die "\e[0musage: $0 -i IMAGING_DIR [-b MASTER_BIAS] [-f MASTER_FLAT] [-d MASTER_DARK]"; }
+usage () { die "${1:-""}\n\n\e[0musage: $0 -i IMAGING_DIR [-b MASTER_BIAS] [-f MASTER_FLAT] [-d MASTER_DARK]"; }
 
 
 #
@@ -53,24 +53,26 @@ done
 processingDate="$(date +"%Y-%m-%dT%H%M")"
 currentDir="$(dirname "$0")"
 lightsPath="$imagingDir/Lights"
-[[ -d "$lightsPath" ]] || { die "Failed to find lights directory $lightsPath"; }
+[[ -d "$lightsPath" ]] || { usage "Failed to find lights directory $lightsPath"; }
 
 # Darks
 darksPath="${userDarks:-"$imagingDir/Darks"}"
 generateDark=
+masterDark=
 if [[ -d "$darksPath" ]]; then
   masterDark="$darksPath/master-dark.fit"
   [[ -r "$masterDark" ]] || generateDark="true"
 elif [[ -r "$darksPath" ]]; then
   masterDark="$darksPath"
 else
-  die "Failed to find darks in $darksPath"
+  errr "Failed to find darks in $darksPath"
 fi
 
 # Flats
 flatsPath="${userFlats:-"$imagingDir/Flats"}"
 generateFlat=
 biasRequired=
+masterFlat=
 if [[ -d "$flatsPath" ]]; then
   masterFlat="$flatsPath/master-flat.fit"
   if [[ ! -r "$masterFlat" ]]; then
@@ -80,11 +82,13 @@ if [[ -d "$flatsPath" ]]; then
 elif [[ -r "$flatsPath" ]]; then
   masterFlat="$flatsPath"
 else
-  die "Failed to find flats in $flatsPath"
+  errr "Failed to find flats in $flatsPath"
 fi
 
 # Biases
+biasesPath="${userBiases:-"$imagingDir/Biases"}"
 generateBias=
+masterBias=
 if [[ -n "$biasRequired" ]]; then
   biasesPath="${userBiases:-"$imagingDir/Biases"}"
   if [[ -d "$biasesPath" ]]; then
@@ -93,14 +97,21 @@ if [[ -n "$biasRequired" ]]; then
   elif [[ -r "$biasesPath" ]]; then
     masterBias="$biasesPath"
   else
-    die "Failed to find biases in $biasesPath"
+    errr "Failed to find biases in $biasesPath"
   fi
 fi
+
+
+[[ -z "$flatsPath" && -z "$masterFlat" ]] && usage
+[[ -z "$darksPath" && -z "$masterDark" ]] && usage
+[[ -n "$biasRequired" && -z "$flatsPath" && -z "$masterFlat" ]] && usage
 
 
 #
 # Log configuration
 #
+echo
+echo
 info "********    Processinging configuration    ********"
 echo "Current directory: $currentDir"
 echo "Imaging directory: $imagingDir"
@@ -140,6 +151,24 @@ fi
 echo
 echo "Processing lights:"
 echo "  lights directory: $lightsPath"
+
+
+echo
+echo
+cat <<EOF
+generateBias="$biasRequired"
+generateFlat="$generateFlat"
+generateDark="$generateDark"
+
+lightsPath="$lightsPath"
+biasesPath="$biasesPath"
+flatsPath="$flatsPath"
+darksPath="$darksPath"
+
+masterBias="$masterBias"
+masterFlat="$masterFlat"
+masterDark="$masterDark"
+EOF
 
 # 1. Find callibration masters
 #    a. Path needs to be relative to lights though
