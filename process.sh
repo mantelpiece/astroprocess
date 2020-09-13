@@ -7,7 +7,6 @@ info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
 
 die () { errr "${1:-""}" >&2; exit "${2:-1}"; }
-usage () { die "\e[0m$0 -p IMAGING_PATH [-b MASTER_BIAS] [-f MASTER_FLAT] [-d MASTER_DARK]"; }
 
 
 if hash siril-cli 2>/dev/null; then
@@ -20,50 +19,17 @@ fi
 siril_w () ( $sirilBin -s <(echo "$*"); )
 
 
-# 1. Find callibration masters
-#    a. Path needs to be relative to lights though
-# 2. Path to lights
-# 3. Session mode? Only perform calibration, don't register or stack
-# 4. Region of interest mode?
-# 5. Drizzle?
-
-
-#
-# Initialise
-#
+# Delegate stacking parameter configuration to `configure-stacking.sh`
+scriptDir="$(realpath $(dirname "$0"))"
 processingDate="$(date +"%Y-%m-%dT%H%M.fit")"
-
-imagingPath=
 session=
-#masterBias="/mnt/c/Users/Brendan/Documents/astrophotography/Imaging/calibration_library/bias/iso800/master-bias_iso800_134frames.fit"
-masterBias=
-masterFlat=
-masterDark=
-while getopts "p:L:F:D:B:b:f:d:S" i; do
-  case "$i" in
-    p) imagingPath="$OPTARG" ;;
-    L) lightsPath="$OPTARG" ;;
-    B) biasesPath="$OPTARG" ;;
-    F) flatsPath="$OPTARG" ;;
-    D) darksPath="$OPTARG" ;;
-    b) masterBias="$OPTARG" ;;
-    f) masterFlat="$OPTARG" ;;
-    d) masterDark="$OPTARG" ;;
-    S) session="${OPTARG:-session}" ;;
-    -) break ;;
-    ?) usage ;;
-    *) usage ;;
-  esac
-done
-[[ -n "$imagingPath" ]] || { usage; }
-[[ -d $imagingPath ]] || { die "$imagingPath not found"; }
-currentDir=$(pwd)
-stackName="stack_$processingDate"
-[[ $stackName =~ "stack_" ]] || { die "Failed to generate output stack name"; }
-lightsPath="${lightsPath:-$imagingPath/Lights}"
-biasesPath="${biasesPath:-$imagingPath/Biases}"
-flatsPath="${flatsPath:-$imagingPath/Flats}"
-darksPath="${darksPath:-$imagingPath/Darks}"
+
+if ! config=$("$scriptDir/configure-stacking.sh" "$@"); then
+  die "Failed to configure stacking"
+fi
+# Set config into shell
+eval $config
+
 
 #
 # Configuration...
@@ -73,33 +39,26 @@ info "**** Processing configuration ****"
 #
 # Master Flat
 #
-maybeMasterFlat="${masterFlat:-$flatsPath/master-flat.fit}"
 echo "master flat:
-  .. checking $maybeMasterFlat"
-if [[ -f "$maybeMasterFlat" ]]; then
-  masterFlat="$maybeMasterFlat"
+  .. checking $flatsPath"
+if [[ -r "$masterFlat" ]]; then
   echo "  .. found $masterFlat"
 else
-  masterFlat=
-  flatsDir="$flatsPath"
-  if [[ ! -d "$flatsDir" ]]; then
-    die "  .. flats directory $flatsDir not found"
+  if [[ ! -d "$flatsPath" ]]; then
+    die "  .. flats directory $flatsPath not found"
   fi
-  echo "  .. no master flat found - processing $flatsDir"
+  echo "  .. no master flat found - processing $flatsPath"
 fi
 
 #
 # Master Bias
 #
-if [[ -n "$masterFlat" ]]; then
-  echo -e "\nmaster bias:
-  .. not required as master flat already exists"
+echo -e "\nmaster bias:"
+if [[ -z "$generateBias" ]]; then
+  echo -e " .. not required as master flat already exists"
 else
-  maybeMasterBias="${masterBias:-"$biasesPath/master-bias.fit"}"
-  echo -e "\nmaster bias:
-  .. checking $maybeMasterBias"
-  if [[ -f "$maybeMasterBias" ]]; then
-    masterBias=$maybeMasterBias
+  echo -e " .. checking $biasesPath"
+  if [[ -r "$masterBias" ]]; then
     echo "  .. using $masterBias"
   else
     echo "  .. no master found - processing $biasesPath"
@@ -110,11 +69,9 @@ fi
 #
 # Master Darks
 #
-maybeMasterDark="${masterDark:-$darksPath/master-dark.fit}"
 echo -e "\nmaster dark:
-  .. checking $maybeMasterDark"
-if [[ -f "$maybeMasterDark" ]]; then
-  masterDark="$maybeMasterDark"
+  .. checking $darksPath"
+if [[ -r "$masterDark" ]]; then
   echo "  .. found $masterDark"
 else
   echo "  .. no master dark found - processing $darksPath"
