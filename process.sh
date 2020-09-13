@@ -166,8 +166,8 @@ fi
 #
 # Processing flats
 #
-bias="$(realpath --relative-to $flatsPath $masterBias)"
 if [[ -z "$masterFlat" ]]; then
+  bias="$(realpath --relative-to $flatsPath $masterBias)"
   info "\n**** Generating master flat ****"
 
   flatsScript="convertraw flat_
@@ -221,11 +221,18 @@ stack="$currentDir/$imagingPath/Stacks/$stackName"
 flat="$(realpath --relative-to $lightsPath $currentDir/$masterFlat)"
 dark="$(realpath --relative-to $lightsPath $currentDir/$masterDark)"
 info "\n**** Processing lights ****"
-  preprocess="convertraw light_
-preprocess light_ -dark=$dark -flat=$flat -cfa -equalize_cfa -debayer"
-  register="register pp_light_"
-  stack="stack r_pp_light_ rej 3 3 -norm=addscale -out=$stack"
 
+preprocess="convertraw light_
+preprocess light_ -dark=$dark -flat=$flat -cfa -equalize_cfa -debayer"
+register="register pp_light_"
+stack="stack r_pp_light_ rej 3 3 -norm=addscale -out=$stack"
+
+# Drizzled ROI
+#   preprocess="convertraw light_
+# preprocess light_ -dark=$dark -flat=$flat -cfa -equalize_cfa -debayer
+# seqcrop pp_light_ 2000 1000 2000 2000"
+#   register="register cropped_pp_light_ -drizzle"
+#   stack="stack r_cropped_pp_light_ rej 3 3 -norm=addscale -out=$stack"
 
 mkdir -p $imagingPath/Stacks
 
