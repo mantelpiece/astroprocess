@@ -12,6 +12,7 @@ siril_w () { siril -s <(echo "$*") >&2; }
 session1="./2020-06-10/Lights/pp_light_*.fit"
 session2="./2020-06-12/Lights/pp_light_*.fit"
 session3="./2020-06-17/Lights/pp_light_*.fit"
+sessions="$session1 $sesion2 $session3"
 
 processingDir="./Processing"
 
@@ -40,10 +41,10 @@ echo -en "\n\ncontinue processing (ctrl-c to cancel)?..."
 read -r
 
 
-info "\n\n**** Moving preprocessed lights to working dir $outputDir"
+info "\n\n**** Moving preprocessed lights to working dir $processingDir"
 mkdir -p $processingDir
 n=0
-for x in $session1 $session2 $session3; do
+for x in $sessions; do
   [[ -f "$x" ]] || continue
   # ln -s "$x" "$processingDir/pp_light_$(printf '%05d' $n).fit"
   mv "$x" "$processingDir/pp_light_$(printf '%05d' $n).fit"
