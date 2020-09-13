@@ -27,13 +27,13 @@ siril_w () ( $sirilBin -s <(echo "$*") 2>&1 | tee "$processingDate.log"; )
 #
 # Process CLI arguments
 #
-imagingDir=
+imagingPath=
 userBiases=
 userDarks=
 userFlats=
 while getopts "i:b:d:f:" i; do
   case "$i" in
-    i) imagingDir="${OPTARG%/}" ;;
+    i) imagingPath="${OPTARG%/}" ;;
     b) userBiases="${OPTARG%/}" ;;
     d) userDarks="${OPTARG%/}" ;;
     f) userFlats="${OPTARG%/}" ;;
@@ -42,7 +42,7 @@ while getopts "i:b:d:f:" i; do
     *) usage ;;
   esac
 done
-[[ -n "$imagingDir" ]] || { usage "Imaging dir must be provided"; }
+[[ -d "$imagingPath" ]] || { usage "Imaging dir must be provided"; }
 
 
 
@@ -52,8 +52,17 @@ done
 
 processingDate="$(date +"%Y-%m-%dT%H%M")"
 currentDir="$(dirname "$0")"
-lightsPath="$imagingDir/Lights"
+lightsPath="$imagingPath/Lights"
 [[ -d "$lightsPath" ]] || { usage "Failed to find lights directory $lightsPath"; }
+
+# Assume imaging path is .../$TARGET/$DATE
+stackName=
+fullPath=$(realpath $imagingPath)
+imagingDate=${fullPath##*/}
+sansDate=${fullPath%/*}
+targetName=${sansDate##*/}
+processingDate=$(date +'%Y%m%dT%T')
+stackName="stack_${targetName}_${imagingDate}_${processingDate}"
 
 
 declare -A masterDirs=( [dark]="Darks" [flat]="Flats" [bias]="Biases" )
@@ -61,16 +70,20 @@ generateMasterConfig () {
   local masterType="$1"
   local userDir="$2"
 
-  local path="${userDir:-"$imagingDir/${masterDirs[$masterType]}"}"
+  local path="${userDir:-"$imagingPath/${masterDirs[$masterType]}"}"
   local generateMaster=
   local master=
   if [[ -d "$path" ]]; then
-    master="$path/master-$masterType.fit"
-    [[ -r "$master" ]] || generateMaster="true"
+    local maybeMaster="$path/master-$masterType.fit"
+    if [[ -r "$maybeMaster" ]]; then
+      master="$path/master-$masterType.fit"
+    else
+      generateMaster="true"
+    fi
   elif [[ -r "$path" ]]; then
     master="$path"
   else
-    die "Failed to find ${masterType}s in $path"
+    die "Failed to find ${masterType} master/raws in $path"
   fi
 
   cat <<EOF
@@ -101,18 +114,24 @@ eval $(generateMasterConfig "bias" "$userBiases")
 
 [[ -z "$darksPath" && -z "$masterDark" ]] && usage "Master dark missing"
 [[ -z "$flatsPath" && -z "$masterFlat" ]] && usage "Master flat missing"
-[[ -n "$biasRequired" && -z "$flatsPath" && -z "$masterFlat" ]] && usage "Master bias missing"
+[[ -n "$biasRequired" && -z "$biasesPath" && -z "$masterBias" ]] && usage "Master bias missing"
 
 
 cat <<EOF
-generateBias="$biasRequired"
-generateFlat="$generateFlat"
-generateDark="$generateDark"
+targetName="$targetName"
+imagingDate="$imagingDate"
+processingDate="$processingDate"
+stackName="$stackName"
 
+imagingPath="$imagingPath"
 lightsPath="$lightsPath"
 biasesPath="$biasesPath"
 flatsPath="$flatsPath"
 darksPath="$darksPath"
+
+generateBias="$biasRequired"
+generateFlat="$generateFlat"
+generateDark="$generateDark"
 
 masterBias="$masterBias"
 masterFlat="$masterFlat"
