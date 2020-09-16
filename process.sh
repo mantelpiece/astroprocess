@@ -16,13 +16,11 @@ elif hash siril 2>/dev/null; then
 else
   die "Missing dep: siril"
 fi
-siril_w () ( $sirilBin -s <(echo "$*"); )
-
 
 # Delegate stacking parameter configuration to `configure-stacking.sh`
+currentDir="$(pwd)"
 scriptDir="$(realpath $(dirname "$0"))"
-processingDate="$(date +"%Y-%m-%dT%H%M.fit")"
-session=
+sirils="$scriptDir/siril-processing"
 
 if ! config=$("$scriptDir/configure-stacking.sh" "$@"); then
   die "Failed to configure stacking"
@@ -98,23 +96,10 @@ start=$(date -u +'%s')
 #
 # Processing biases
 #
-if [[ -z "$masterBias" ]] && [[ -z "$masterFlat" ]]; then
+if [[ ! -r "$masterBias" ]] && [[ ! -r "$masterFlat" ]]; then
   info "\n**** Generating master bias ****"
-  biasesScript="convertraw bias_
-stack bias_ rej 3 3 -nonorm -out=master-bias.fit"
-
-  echo "Master bias generation script:
-$biasesScript"
-
-  (
-    cd "$biasesPath";
-    if ! siril_w "$biasesScript"; then
-      rm -f bias_*
-      die "Siril error generating master bias"
-    fi
-    rm -f bias_*
-  )
-
+  $sirils/convertAndStackWithRejectionAndNoNorm.sh \
+      "$biasesPath" "bias_" "master-bias"
   masterBias="$biasesPath/master-bias.fit"
   good "Created master bias $masterBias"
 fi
@@ -123,25 +108,13 @@ fi
 #
 # Processing flats
 #
-if [[ -z "$masterFlat" ]]; then
+if [[ ! -r "$masterFlat" ]]; then
   bias="$(realpath --relative-to $flatsPath $masterBias)"
   info "\n**** Generating master flat ****"
-
-  flatsScript="convertraw flat_
-preprocess flat_ -bias=$bias
-stack pp_flat_ rej 3 3 -norm=mul -out=master-flat.fit"
-  echo "Master flat generation script
-$flatsScript"
-
-  (
-    cd "$flatsPath"
-    if ! siril_w "$flatsScript"; then
-      rm -f flat_* pp_flat_*
-      die "Siril error processing flats"
-    fi
-    rm -f flat_* pp_flat_*
-  )
-  masterFlat="$flatsPath/master-flat.fit"
+  $sirils/convertAndPreprocessWithCalibration.sh \
+      "$flatsPath" "flat_" "-bias=$bias"
+  $sirils/stackSeqWithRejection.sh \
+      "$flatsPath" "pp_flat_" "mul" "master-flat"
   good "Created master flat $masterFlat"
 fi
 
@@ -150,82 +123,47 @@ fi
 #
 # Processing darks
 #
-if [[ -z "$masterDark" ]]; then
+if [[ ! -r "$masterDark" ]]; then
   info "\n**** Generating master dark ****"
-
-  darksScript="convertraw dark_
-stack dark_ rej 3 3 -nonorm -out=master-dark.fit"
-  echo "Master dark script
-$darksScript"
-
-  (
-    cd "$darksPath";
-    if ! siril_w "$darksScript"; then
-      rm -f dark_*
-      die "Siril error while generating master dark"
-    fi
-    rm -f dark_*
-  )
+  $sirils/convertAndStackWithRejectionAndNoNorm.sh \
+      "$darksPath" "dark_" "master-dark"
   masterDark="$darksPath/master-dark.fit"
+  good "Created master dark $masterDark"
 fi
-
 
 
 #
 # Processing lights
 #
-stack="$currentDir/$imagingPath/Stacks/$stackName"
-flat="$(realpath --relative-to $lightsPath $currentDir/$masterFlat)"
-dark="$(realpath --relative-to $lightsPath $currentDir/$masterDark)"
 info "\n**** Processing lights ****"
 
-preprocess="convertraw light_
-preprocess light_ -dark=$dark -flat=$flat -cfa -equalize_cfa -debayer"
-register="register pp_light_"
-stack="stack r_pp_light_ rej 3 3 -norm=addscale -out=$stack"
-
-# Drizzled ROI
-#   preprocess="convertraw light_
-# preprocess light_ -dark=$dark -flat=$flat -cfa -equalize_cfa -debayer
-# seqcrop pp_light_ 2000 1000 2000 2000"
-#   register="register cropped_pp_light_ -drizzle"
-#   stack="stack r_cropped_pp_light_ rej 3 3 -norm=addscale -out=$stack"
-
-mkdir -p $imagingPath/Stacks
-
-info "\n***** Light processing script ******"
-echo "$preprocess"
-[[ -z "$session" ]] && echo -e "$register\n$stack"
-
-
 info "\n**** Begin light processing ****"
+mkdir -p $imagingPath/Stacks
+flat="$(realpath --relative-to "$lightsPath" "$currentDir/$masterFlat")"
+dark="$(realpath --relative-to "$lightsPath" "$currentDir/$masterDark")"
+outputStack="$(realpath --relative-to $lightsPath "$imagingPath/Stacks/$stackName")"
 
-(
-  cd "$lightsPath"
-  info "\n**** Converting and preprocessing lights ****"
+$sirils/convertAndPreprocessWithCalibration.sh \
+    "$lightsPath" "light_" "-dark=$dark -flat=$flat -cfa -equalize_cfa -debayer"
+currentSeq="pp_light_"
 
-  if ! siril_w "$preprocess"; then
-    rm -f light_* pp_light_*
-    die "Siril failed during lights preprocessing"
-  fi
-  rm -f light_*
 
-  if [[ -z "$session" ]]; then
-    info "\n**** Registering and stacking lights ****"
-    if ! siril_w "$register"; then
-      rm -f r_pp_light_*
-      die "Siril failed during register of lights"
-    fi
+if [[ -n "$roi" ]]; then
+  echo "Using ROI and drizzle for processing lights"
+  $sirils/cropSeq.sh "$lightsPath" "$currentSeq" "$roi"
+  currentSeq="cropped_$currentSeq"
+fi
 
-    rm -f pp_light_*
-    if ! siril_w "$stack"; then
-      die "Siril failed during lights stacking"
-    fi
 
-    rm -f light_* pp_light_* r_pp_light_*
-  fi
+if [[ -z "$session" ]]; then
+  drizzle=${roi:+"-drizzle"}
+  $sirils/registerSeqWithOptions.sh "$lightsPath" "$currentSeq" "$drizzle"
+  currentSeq="r_$currentSeq"
 
-)
+  sirils/stackSeqWithRejection.sh "$lightsPath" "$currentSeq" "addscale" "$outputStack"
+fi
+
+
 good "**** Success ****"
 if [[ -z "$session" ]]; then
   echo "Final stack $imagingPath/Stacks/$stackName"

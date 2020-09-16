@@ -31,12 +31,16 @@ imagingPath=
 userBiases=
 userDarks=
 userFlats=
-while getopts "i:b:d:f:" i; do
+roi=
+session=
+while getopts "i:b:d:f:r:S" i; do
   case "$i" in
     i) imagingPath="${OPTARG%/}" ;;
     b) userBiases="${OPTARG%/}" ;;
     d) userDarks="${OPTARG%/}" ;;
     f) userFlats="${OPTARG%/}" ;;
+    r) roi="${OPTARG}" ;;
+    S) session="true" ;;
     -) break ;;
     ?) usage ;;
     *) usage ;;
@@ -61,7 +65,7 @@ fullPath=$(realpath $imagingPath)
 imagingDate=${fullPath##*/}
 sansDate=${fullPath%/*}
 targetName=${sansDate##*/}
-processingDate=$(date +'%Y%m%dT%T')
+processingDate=$(date +'%Y%m%dT%H%M')
 stackName="stack_${targetName}_${imagingDate}_${processingDate}"
 
 
@@ -122,6 +126,8 @@ targetName="$targetName"
 imagingDate="$imagingDate"
 processingDate="$processingDate"
 stackName="$stackName"
+roi="$roi"
+session="$session"
 
 imagingPath="$imagingPath"
 lightsPath="$lightsPath"
