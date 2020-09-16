@@ -6,19 +6,34 @@ info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
 
 
-siril_w () { siril -s <(echo "$*") >&2; }
+scriptDir="$(realpath $(dirname "$0"))"
+sirils="$scriptDir/siril-processing"
 
 
-session1="./2020-06-10/Lights/pp_light_*.fit"
-session2="./2020-06-12/Lights/pp_light_*.fit"
+session1="./2020-09-13/Lights/cropped_pp_light_*.fit"
+session2="./2020-09-14/Lights/cropped_pp_light_*.fit"
 session3="./2020-06-17/Lights/pp_light_*.fit"
-sessions="$session1 $sesion2 $session3"
+sessions="$session1 $session2"
 
+
+#
+# Process CLI arguments
+#
+drizzle=
+while getopts "d" i; do
+  case "$i" in
+    d) drizzle="-drizzle" ;;
+    -) break ;;
+    ?) usage ;;
+    *) usage ;;
+  esac
+done
+
+# Assume current directory is TARGET
+currentDir=$(pwd)
+target=${currentDir##*/}
 processingDir="./Processing"
-
-stackName="stack_$(date +"%Y-%m-%dT%H%M").fit"
-lightsScript="register pp_light_
-stack r_pp_light_ rej 3 3 -norm=addscale -out=./$stackName"
+stackName="stack_${target}_$(date +"%Y-%m-%dT%H%M")"
 
 
 good "**** Processing config ****"
@@ -32,9 +47,11 @@ echo "    preprocessed lights: $session3"
 
 
 echo -e "\n\nProcessing"
+if [[ -n "$drizzle" ]]; then
+  echo -e "subframes will be drizzled before stacking"
+fi
 echo -e "lights will be moved to directory $processingDir"
 echo -e "\noutput stack: $stackName"
-echo -e "\nprocessing script:\n$lightsScript"
 
 
 echo -en "\n\ncontinue processing (ctrl-c to cancel)?..."
@@ -53,15 +70,10 @@ done
 
 
 info "\n**** Registering and stacking sessions ****"
-(
-  cd $processingDir
-  if ! siril_w "$lightsScript"; then
-    die "Siril failed during lights preprocessing"
-  fi
-  rm -f r_pp_light_*
-  echo "Not deleting raw pp_light files"
-  echo "Stack file $processingDir/$stackName"
-)
+$sirils/registerSeqWithOptions.sh "$processingDir" "pp_light_" "$drizzle"
+$sirils/stackSeqWithRejection.sh "$processingDir" "r_pp_light_" "addscale" "$stackName"
+
+
 
 info "\n**** Success ****"
 mkdir -p Stacks
