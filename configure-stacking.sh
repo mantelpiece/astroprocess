@@ -28,14 +28,16 @@ siril_w () ( $sirilBin -s <(echo "$*") 2>&1 | tee "$processingDate.log"; )
 # Process CLI arguments
 #
 imagingPath=
+userLights=
 userBiases=
 userDarks=
 userFlats=
 roi=
 session=
-while getopts "i:b:d:f:r:S" i; do
+while getopts "i:l:b:d:f:r:S" i; do
   case "$i" in
     i) imagingPath="${OPTARG%/}" ;;
+    l) userLights="${OPTARG%/}" ;;
     b) userBiases="${OPTARG%/}" ;;
     d) userDarks="${OPTARG%/}" ;;
     f) userFlats="${OPTARG%/}" ;;
@@ -56,7 +58,7 @@ done
 
 processingDate="$(date +"%Y-%m-%dT%H%M")"
 currentDir="$(dirname "$0")"
-lightsPath="$imagingPath/Lights"
+lightsPath="${userLights:-"$imagingPath/Lights"}"
 [[ -d "$lightsPath" ]] || { usage "Failed to find lights directory $lightsPath"; }
 
 # Assume imaging path is .../$TARGET/$DATE

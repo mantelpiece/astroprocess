@@ -141,7 +141,7 @@ info "\n**** Begin light processing ****"
 mkdir -p $imagingPath/Stacks
 flat="$(realpath --relative-to "$lightsPath" "$currentDir/$masterFlat")"
 dark="$(realpath --relative-to "$lightsPath" "$currentDir/$masterDark")"
-outputStack="$(realpath --relative-to $lightsPath "$imagingPath/Stacks/$stackName")"
+outputStack="$(realpath --relative-to $lightsPath "$imagingPath/Stacks/${stackName}")"
 
 $sirils/convertAndPreprocessWithCalibration.sh \
     "$lightsPath" "light_" "-dark=$dark -flat=$flat -cfa -equalize_cfa -debayer"
@@ -160,7 +160,7 @@ if [[ -z "$session" ]]; then
   $sirils/registerSeqWithOptions.sh "$lightsPath" "$currentSeq" "$drizzle"
   currentSeq="r_$currentSeq"
 
-  sirils/stackSeqWithRejection.sh "$lightsPath" "$currentSeq" "addscale" "$outputStack"
+  $sirils/stackSeqWithRejection.sh "$lightsPath" "$currentSeq" "addscale" "$outputStack"
 fi
 
 
