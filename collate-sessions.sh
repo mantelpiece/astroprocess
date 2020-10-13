@@ -77,5 +77,5 @@ $sirils/stackSeqWithRejection.sh "$processingDir" "r_pp_light_" "addscale" "$sta
 
 info "\n**** Success ****"
 mkdir -p Stacks
-cp $processingDir/$stackName ./Stacks/
+cp $processingDir/$stackName.fit ./Stacks/
 echo "Final stack ./Stacks/$stackName"
