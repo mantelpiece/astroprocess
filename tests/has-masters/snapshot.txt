@@ -1,15 +1,20 @@
-[34m********    Processinging configuration    ********[0m
-Current directory: ./tests/..
-Imaging directory: ./tests/has-masters
+targetName="tests"
+imagingDate="has-masters"
+processingDate="20201013T2107"
+stackName="stack_tests_has-masters_20201013T2107"
+roi=""
+session=""
 
-Bias master:
-  Biases master not required as flats master exists
+imagingPath="./tests/has-masters"
+lightsPath="./tests/has-masters/Lights"
+biasesPath=""
+flatsPath="./tests/has-masters/Flats"
+darksPath="./tests/has-masters/Darks"
 
-Flats master:
-  Using pre-existing flats master ./tests/has-masters/Flats/master-flat.fit
+generateBias=""
+generateFlat=""
+generateDark=""
 
-Darks master:
-  Using pre-existing darks master ./tests/has-masters/Darks/master-dark.fit
-
-Processing lights:
-  lights directory: ./tests/has-masters/Lights
+masterBias="./tests/has-masters/Biases/master-bias.fit"
+masterFlat="./tests/has-masters/Flats/master-flat.fit"
+masterDark="./tests/has-masters/Darks/master-dark.fit"

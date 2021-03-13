@@ -51,6 +51,17 @@ done
 [[ -d "$imagingPath" ]] || { usage "Imaging dir must be provided"; }
 
 
+noFlats=
+if [[ "$@" =~ "--no-flats" ]]; then
+  noFlats="noFlats"
+fi
+
+noDarks=
+if [[ "$@" =~ "--no-darks" ]]; then
+  noDarks="noDarks"
+fi
+
+
 
 #
 # Setup processing configuration
@@ -58,7 +69,7 @@ done
 
 processingDate="$(date +"%Y-%m-%dT%H%M")"
 currentDir="$(dirname "$0")"
-lightsPath="${userLights:-"$imagingPath/Lights"}"
+lightsPath="${userLights:-"$imagingPath/LIGHT"}"
 [[ -d "$lightsPath" ]] || { usage "Failed to find lights directory $lightsPath"; }
 
 # Assume imaging path is .../$TARGET/$DATE
@@ -71,7 +82,7 @@ processingDate=$(date +'%Y%m%dT%H%M')
 stackName="stack_${targetName}_${imagingDate}_${processingDate}"
 
 
-declare -A masterDirs=( [dark]="Darks" [flat]="Flats" [bias]="Biases" )
+declare -A masterDirs=( [dark]="DARK" [flat]="FLAT" [bias]="Biases" )
 generateMasterConfig () {
   local masterType="$1"
   local userDir="$2"
@@ -102,25 +113,24 @@ EOF
 darksPath=
 generateDark=
 masterDark=
-eval $(generateMasterConfig "dark" "$userDarks")
+[[ -z "$noDarks" ]] && eval $(generateMasterConfig "dark" "$userDarks")
 
 
 flatsPath=
 generateFlat=
 masterFlat=
-eval $(generateMasterConfig "flat" "$userFlats")
+[[ -z "$noFlats" ]] && eval $(generateMasterConfig "flat" "$userFlats")
 
-biasRequired=
-[[ -r "$masterFlat" ]] || biasRequired="true"
 biasesPath=
 generateBias=
 masterBias=
 eval $(generateMasterConfig "bias" "$userBiases")
+[[ -n "$noFlats" ]] && generateBias=
 
 
-[[ -z "$darksPath" && -z "$masterDark" ]] && usage "Master dark missing"
-[[ -z "$flatsPath" && -z "$masterFlat" ]] && usage "Master flat missing"
-[[ -n "$biasRequired" && -z "$biasesPath" && -z "$masterBias" ]] && usage "Master bias missing"
+[[ -z "$darksPath" && -z "$masterDark" && -z "$noDarks" ]] && usage "Master dark missing"
+[[ -z "$flatsPath" && -z "$masterFlat" && -z "$noFlats" ]] && usage "Master flat missing"
+[[ -n "$generateFlat" && -z "$biasesPath" && -z "$masterBias" ]] && usage "Master bias missing"
 
 
 cat <<EOF
@@ -137,7 +147,9 @@ biasesPath="$biasesPath"
 flatsPath="$flatsPath"
 darksPath="$darksPath"
 
-generateBias="$biasRequired"
+noFlats="$noFlats"
+noDarks="$noDarks"
+generateBias="$generateBias"
 generateFlat="$generateFlat"
 generateDark="$generateDark"
 

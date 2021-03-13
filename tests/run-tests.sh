@@ -7,6 +7,7 @@ errr () { echo -e "\e[31m$*\e[0m"; }
 die () { errr "${1:-""}" >&2; exit "${2:-1}"; }
 
 [[ -d "./tests" ]] || { die "Run from astroprocess dir"; }
+hash colordiff >&2 || { die "Missing dep: colordiff"; }
 
 
 function cdiff() {
@@ -29,7 +30,7 @@ done
 
 isError=
 runTest () {
-  local theBin="$scriptDir/../stack.sh"
+  local theBin="$scriptDir/../configure-stacking.sh"
   local title="$1"
   local testDir="$2"
   local stackArgs="${3:-""}"

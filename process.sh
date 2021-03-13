@@ -27,6 +27,7 @@ if ! config=$("$scriptDir/configure-stacking.sh" "$@"); then
 fi
 # Set config into shell
 eval $config
+echo "$config"
 
 
 #
@@ -37,29 +38,35 @@ info "**** Processing configuration ****"
 #
 # Master Flat
 #
-echo "master flat:
-  .. checking $flatsPath"
-if [[ -r "$masterFlat" ]]; then
-  echo "  .. found $masterFlat"
+if [[ -n "$noFlats" ]]; then
+  echo -e "\nnot using flat frames"
 else
-  if [[ ! -d "$flatsPath" ]]; then
-    die "  .. flats directory $flatsPath not found"
-  fi
-  echo "  .. no master flat found - processing $flatsPath"
-fi
-
-#
-# Master Bias
-#
-echo -e "\nmaster bias:"
-if [[ -z "$generateBias" ]]; then
-  echo -e " .. not required as master flat already exists"
-else
-  echo -e " .. checking $biasesPath"
-  if [[ -r "$masterBias" ]]; then
-    echo "  .. using $masterBias"
+  echo "master flat:
+    .. checking $flatsPath"
+  if [[ -r "$masterFlat" ]]; then
+    echo "  .. found $masterFlat"
   else
-    echo "  .. no master found - processing $biasesPath"
+    if [[ ! -d "$flatsPath" ]]; then
+      die "  .. flats directory $flatsPath not found"
+    fi
+    echo "  .. no master flat found - processing $flatsPath"
+    masterFlat="$flatsPath/master-flat.fit"
+  fi
+
+  #
+  # Master Bias
+  #
+  echo -e "\nmaster bias:"
+  if [[ -z "$generateBias" ]]; then
+    echo -e " .. not required as master flat already exists"
+  else
+    echo -e " .. checking $biasesPath"
+    if [[ -r "$masterBias" ]]; then
+      echo "  .. using $masterBias"
+    else
+      echo "  .. no master found - processing $biasesPath"
+      masterBias="$biasesPath/master-flat.fit"
+    fi
   fi
 fi
 
@@ -67,12 +74,17 @@ fi
 #
 # Master Darks
 #
-echo -e "\nmaster dark:
-  .. checking $darksPath"
-if [[ -r "$masterDark" ]]; then
-  echo "  .. found $masterDark"
+if [[ -n "$noDarks" ]]; then
+  echo -e "\nnot using dark frames"
 else
-  echo "  .. no master dark found - processing $darksPath"
+  echo -e "\nmaster dark:
+    .. checking $darksPath"
+  if [[ -r "$masterDark" ]]; then
+    echo "  .. found $masterDark"
+  else
+    echo "  .. no master dark found - processing $darksPath"
+    masterDark="$darksPath/master-dark.fit"
+  fi
 fi
 
 
@@ -88,6 +100,7 @@ else
   echo -e "\nOutput stack will be $imagingPath/Stacks/$stackName"
 fi
 
+echo "I need to set masters even if they dont exist"
 echo -ne "\n\nContinue processing? .... "
 read -r input
 start=$(date -u +'%s')
@@ -96,7 +109,7 @@ start=$(date -u +'%s')
 #
 # Processing biases
 #
-if [[ ! -r "$masterBias" ]] && [[ ! -r "$masterFlat" ]]; then
+if [[ ! -r "$masterBias" ]] && [[ -n "$generateBias" ]]; then
   info "\n**** Generating master bias ****"
   $sirils/convertAndStackWithRejectionAndNoNorm.sh \
       "$biasesPath" "bias_" "master-bias"
@@ -108,7 +121,7 @@ fi
 #
 # Processing flats
 #
-if [[ ! -r "$masterFlat" ]]; then
+if [[ ! -r "$masterFlat" ]] && [[ -n "$generateFlat" ]]; then
   bias="$(realpath --relative-to $flatsPath $masterBias)"
   info "\n**** Generating master flat ****"
   $sirils/convertAndPreprocessWithCalibration.sh \
@@ -123,7 +136,7 @@ fi
 #
 # Processing darks
 #
-if [[ ! -r "$masterDark" ]]; then
+if [[ ! -r "$masterDark" ]] && [[ -n "$generateDark" ]]; then
   info "\n**** Generating master dark ****"
   $sirils/convertAndStackWithRejectionAndNoNorm.sh \
       "$darksPath" "dark_" "master-dark"
@@ -143,8 +156,11 @@ flat="$(realpath --relative-to "$lightsPath" "$currentDir/$masterFlat")"
 dark="$(realpath --relative-to "$lightsPath" "$currentDir/$masterDark")"
 outputStack="$(realpath --relative-to $lightsPath "$imagingPath/Stacks/${stackName}")"
 
+calibrationFrames=""
+[[ -z "$noDarks" ]] && calibrationFrames="$calibrationFrames -dark=$dark"
+[[ -z "$noFlats" ]] && calibrationFrames="$calibrationFrames -flat=$flat"
 $sirils/convertAndPreprocessWithCalibration.sh \
-    "$lightsPath" "light_" "-dark=$dark -flat=$flat -cfa -equalize_cfa -debayer"
+    "$lightsPath" "light_" "$calibrationFrames -cfa -equalize_cfa -debayer"
 currentSeq="pp_light_"
 
 

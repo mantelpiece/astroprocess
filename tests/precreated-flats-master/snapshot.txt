@@ -1,15 +1,20 @@
-[34m********    Processinging configuration    ********[0m
-Current directory: ./tests/..
-Imaging directory: ./tests/precreated-flats-master
+targetName="tests"
+imagingDate="precreated-flats-master"
+processingDate="20201013T2107"
+stackName="stack_tests_precreated-flats-master_20201013T2107"
+roi=""
+session=""
 
-Bias master:
-  Biases master not required as flats master exists
+imagingPath="./tests/precreated-flats-master"
+lightsPath="./tests/precreated-flats-master/Lights"
+biasesPath=""
+flatsPath="./tests/_precreated/Flats/master-flat-iso800.fit"
+darksPath="./tests/precreated-flats-master/Darks"
 
-Flats master:
-  Using pre-existing flats master ./tests/_precreated/Flats/master-flat-iso800.fit
+generateBias=""
+generateFlat=""
+generateDark=""
 
-Darks master:
-  Using pre-existing darks master ./tests/precreated-flats-master/Darks/master-dark.fit
-
-Processing lights:
-  lights directory: ./tests/precreated-flats-master/Lights
+masterBias=""
+masterFlat="./tests/_precreated/Flats/master-flat-iso800.fit"
+masterDark="./tests/precreated-flats-master/Darks/master-dark.fit"

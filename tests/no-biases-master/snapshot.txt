@@ -1,15 +1,20 @@
-[34m********    Processinging configuration    ********[0m
-Current directory: ./tests/..
-Imaging directory: ./tests/no-biases-master
+targetName="tests"
+imagingDate="no-biases-master"
+processingDate="20201013T2107"
+stackName="stack_tests_no-biases-master_20201013T2107"
+roi=""
+session=""
 
-Bias master:
-  Biases master not required as flats master exists
+imagingPath="./tests/no-biases-master"
+lightsPath="./tests/no-biases-master/Lights"
+biasesPath=""
+flatsPath="./tests/no-biases-master/Flats"
+darksPath="./tests/no-biases-master/Darks"
 
-Flats master:
-  Using pre-existing flats master ./tests/no-biases-master/Flats/master-flat.fit
+generateBias=""
+generateFlat=""
+generateDark=""
 
-Darks master:
-  Using pre-existing darks master ./tests/no-biases-master/Darks/master-dark.fit
-
-Processing lights:
-  lights directory: ./tests/no-biases-master/Lights
+masterBias=""
+masterFlat="./tests/no-biases-master/Flats/master-flat.fit"
+masterDark="./tests/no-biases-master/Darks/master-dark.fit"
