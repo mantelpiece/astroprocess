@@ -1,0 +1,18 @@
+[34m********    Processinging configuration    ********[0m
+Current directory: ./tests/..
+Imaging directory: ./tests/no-masters
+
+Bias master:
+  Biases master ./tests/no-masters/Biases/master-bias.fit not found
+  Generating biases master from directory ./tests/no-masters/Biases
+
+Flats master:
+  Flats master ./tests/no-masters/Flats/master-flat.fit not found
+  Generating flats master from directory ./tests/no-masters/Flats
+
+Darks master:
+  Darks master ./tests/no-masters/Darks/master-dark.fit not found
+  Generating darks master from directory ./tests/no-masters/Darks
+
+Processing lights:
+  lights directory: ./tests/no-masters/Lights
