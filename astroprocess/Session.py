@@ -1,4 +1,7 @@
 
+
+
+@dataclass
 class Session:
     target: str
     date: str
