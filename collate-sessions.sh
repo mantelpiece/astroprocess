@@ -10,10 +10,11 @@ scriptDir="$(realpath $(dirname "$0"))"
 sirils="$scriptDir/siril-processing"
 
 
-session1="./2020-09-13/Lights/cropped_pp_light_*.fit"
-session2="./2020-09-14/Lights/cropped_pp_light_*.fit"
-session3="./2020-06-17/Lights/pp_light_*.fit"
-sessions="$session1 $session2"
+session1="./2021-02-23/LIGHT/pp_light_*.fit"
+session2="./2021-02-26/LIGHT/pp_light_*.fit"
+session3="./2021-03-10/LIGHT/pp_light_*.fit"
+session4="./2021-03-12/LIGHT/pp_light_*.fit"
+sessions="$session1 $session2 $session3 $session4"
 
 
 #
@@ -21,12 +22,12 @@ sessions="$session1 $session2"
 #
 drizzle=
 while getopts "d" i; do
-  case "$i" in
-    d) drizzle="-drizzle" ;;
-    -) break ;;
-    ?) usage ;;
-    *) usage ;;
-  esac
+    case "$i" in
+        d) drizzle="-drizzle" ;;
+        -) break ;;
+        ?) usage ;;
+        *) usage ;;
+    esac
 done
 
 # Assume current directory is TARGET
@@ -48,7 +49,7 @@ echo "    preprocessed lights: $session3"
 
 echo -e "\n\nProcessing"
 if [[ -n "$drizzle" ]]; then
-  echo -e "subframes will be drizzled before stacking"
+    echo -e "subframes will be drizzled before stacking"
 fi
 echo -e "lights will be moved to directory $processingDir"
 echo -e "\noutput stack: $stackName"
