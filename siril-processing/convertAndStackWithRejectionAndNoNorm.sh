@@ -16,7 +16,7 @@ output="${3?}"
 
 script="requires 0.99.9
 convertraw ${seqName}
-stack ${seqName} rej 3 3 -nonorm -out=$output.fit"
+stack ${seqName} med winsorized 4 3 -nonorm -out=$output.fit"
 
 
 trap 'rm -f ${seqName}*' EXIT

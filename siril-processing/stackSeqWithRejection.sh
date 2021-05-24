@@ -18,13 +18,7 @@ output="${4?}"
 script="requires 0.99.9
 stack $seqName rej 3 3 -norm=$normalisation -out=$output.fit"
 
-(
-  cd "$path" || die "Failed to cd into path $path";
-  info "running siril with script:
-$script";
-  if ! siril_w "$script"; then
-    rm -f $seqName*
+trap 'rm -f ${seqName}*' EXIT
+if ! "$dir/sirilWrapper.sh" "$path" "$script"; then
     die "Siril processing failed";
-  fi
-  rm -f $seqName*
-)
+fi
