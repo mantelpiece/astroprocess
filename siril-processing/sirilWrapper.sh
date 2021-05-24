@@ -1,3 +1,9 @@
+#!/usr/bin/env bash
+
+die () { echo "$1" >&2; exit 1; }
+usage () { die "usage: $0 DIR SCRIPT"; }
+
+
 if hash siril-cli 2>/dev/null; then
   sirilBin="siril-cli"
 elif hash siril 2>/dev/null; then
@@ -6,4 +12,15 @@ else
   die "Missing dep: siril"
 fi
 
-siril_w () ( $sirilBin -s <(echo "$*"); )
+workingDir="$1"
+[[ -n $workingDir ]] || usage
+script="$2"
+[[ -n $script ]] || usage
+
+
+echo "---- Running siril:"
+echo "Working dir: $workingDir"
+echo "Script: $script"
+
+echo "---- Siril execution logs:"
+$sirilBin -d "$workingDir" -s <(echo "$script")
