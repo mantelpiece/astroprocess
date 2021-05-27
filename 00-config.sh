@@ -44,39 +44,40 @@ configureSubframes () {
     local subDir="${subDirs[$masterType]}"
     local dir="$inputDir/$subDir"
 
+    if [[ -z "$inputDir" ]]; then
+        echo "\"no${masterType^}\": true"
+        return
+    fi
+
     if [[ ! -d "$dir" ]]; then
         die "$masterType directory '$dir' not found"
     fi
 
     if [[ -r "$dir/master-$masterType.fit" ]]; then
         master="$dir/master-$masterType.fit"
-        echo "master${masterType^}=\"$master\""
+        echo "\"master${masterType^}\": \"$master\""
     else
-        echo "${masterType}Dir=\"$dir\""
+        echo "\"${masterType}Dir\": \"$dir\""
     fi
 }
 
 if [[ -z $userLights ]]; then
     die "Must specify lights dir"
 else
-    configureSubframes "$userLights" "light"
+    lightConfig=$(configureSubframes "$userLights" "light")
 fi
 
+biasesConfig=$(configureSubframes "$userBiases" "bias")
+flatsConfig=$(configureSubframes "$userFlats" "flat")
+darksConfig=$(configureSubframes "$userDarks" "dark")
 
-if [[ -z $userFlats ]]; then
-    echo "noFlats=noFlats"
-else
-    configureSubframes "$userFlats" "flat"
-fi
 
-if [[ -z $userBiases ]]; then
-    echo "noBiases=noBiases"
-else
-    configureSubframes "$userBiases" "bias"
-fi
-
-if [[ -z $userDarks ]]; then
-    echo "noDarks=noDarks"
-else
-    configureSubframes "$userDarks" "dark"
-fi
+# Output config as JSON
+cat <<EOF
+{
+    $lightConfig,
+    $biasesConfig,
+    $flatsConfig,
+    $darksConfig
+}
+EOF
