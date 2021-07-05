@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+info () { echo -e "\e[34m$*\e[0m"; }
+
 die () { echo "$1" >&2; exit 1; }
 usage () { die "usage: $0 dir script"; }
 
@@ -18,9 +20,9 @@ script="$2"
 [[ -n $script ]] || usage
 
 
-echo "---- Running siril:"
+echo -e "\nRunning siril:"
 echo "Working dir: $workingDir"
 echo "Script: $script"
 
-echo "---- Siril execution logs:"
+echo -e "\nSiril logs:"
 $sirilBin -d "$workingDir" -s <(echo "$script")

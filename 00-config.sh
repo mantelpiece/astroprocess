@@ -73,7 +73,7 @@ darksConfig=$(configureSubframes "$userDarks" "dark")
 
 
 # Output config as JSON
-cat <<EOF
+tee config.json <<EOF
 {
     $lightConfig,
     $biasesConfig,

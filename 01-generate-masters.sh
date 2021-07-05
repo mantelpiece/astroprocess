@@ -10,14 +10,6 @@ die () { echo "$1" >&2; exit 1; }
 
 
 hash jq 2>/dev/null || die "Missing dependency: jq";
-if hash siril-cli 2>/dev/null; then
-  sirilBin="siril-cli"
-elif hash siril 2>/dev/null; then
-  sirilBin="siril"
-else
-  die "Missing dep: siril"
-fi
-
 
 dir="$(dirname "$0")"
 
@@ -50,11 +42,9 @@ dir="$(dirname "$0")"
 #
 # * only subtract masterBias from darks if dark optimisation is used
 
-info "\n---- Generating config"
-if ! config="$(./00-config.sh "$@")"; then
-    die "Failed to configure"
-fi
-echo "Config:"
+info "\n---- Parsing initial config"
+config=$(cat ./config.json)
+echo "Initial config:"
 echo "$config"
 
 lightDir=$(<<<$config jq -r '.lightDir // empty')
@@ -99,8 +89,8 @@ if [[ -n "$flatsDir" ]]; then
     else
         bias="$(realpath --relative-to "$flatsDir" "$masterBias")"
         echo "Using calibrating flats with bias $bias"
-        $dir/siril-processing/convertAndPreprocessWithCalibration.sh \
-            "$flatsDir" "flat_" "-bias=$bias" || die "Failed to preprocess flats";
+        $dir/siril-processing/convertAndPreprocess.sh \
+            -d "$flatsDir" -s "flat_" -- "'-bias=$bias'" || die "Failed to preprocess flats";
         $dir/siril-processing/stack.sh \
             -d "$flatsDir" -s "pp_flat_" -n "-norm=mul" -o "master-flat" || die "Failed to stack flats";
     fi
@@ -125,4 +115,7 @@ if [[ -n "$darksDir" ]]; then
     config=$(setConfig "$config" "masterDark" "$masterDark")
     good "Created master dark $masterFlat"
 fi
-echo "$config">.config.json
+
+echo "Updated config with generated masters:"
+echo "$config" | tee .config.json
+

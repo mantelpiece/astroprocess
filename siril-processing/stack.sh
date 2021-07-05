@@ -23,7 +23,7 @@ while getopts "d:s:o:n:a:r:" i; do
         d) subsDir="${OPTARG}" ;;
         s) sequenceName="${OPTARG}" ;;
         o) outputFile="${OPTARG}" ;;
-        n) normalisation="${OPTARG}" ;;
+        n) normalisation="-norm=${OPTARG}" ;;
         a) algorithm="${OPTARG}" ;;
         r) rejection="${OPTARG}" ;;
         -) break ;;

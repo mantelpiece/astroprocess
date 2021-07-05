@@ -7,25 +7,17 @@ info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
 
 die () { errr "${1:-""}" >&2; exit "${2:-1}"; }
-usage () { die "usage: $0 -d subs-dir -s sequence-name -o output-file [-n normalisation] [-a algorithm] [-r rejection]"; }
+usage () { die "usage: $0 -d subs-dir -s sequence-name"; }
 
 dir=$(dirname "$0")
 
 
 subsDir=
 sequenceName=
-outputFile=
-algorithm="med"
-normalisation="-nonorm"
-rejection="w 4 3"
-while getopts "d:s:o:n:a:r:" i; do
+while getopts "d:s:" i; do
     case "$i" in
         d) subsDir="${OPTARG}" ;;
         s) sequenceName="${OPTARG}" ;;
-        o) outputFile="${OPTARG}" ;;
-        n) normalisation="norm=${OPTARG}" ;;
-        a) algorithm="${OPTARG}" ;;
-        r) rejection="${OPTARG}" ;;
         -) break ;;
         ?) usage ;;
         *) usage ;;
@@ -33,15 +25,13 @@ while getopts "d:s:o:n:a:r:" i; do
 done
 [[ -n $subsDir ]] || usage;
 [[ -n $sequenceName ]] || usage;
-[[ -n $outputFile ]] || usage;
 
 
 script="requires 0.99.9
-convertraw $sequenceName
-stack $sequenceName $algorithm $rejection $normalisation -out=$outputFile.fit"
+register $sequenceName $@"
 
-
-trap 'rm -f $subsDir/{${sequenceName}*,*.seq}' EXIT
+trap 'rm -f ${sequenceName}*' EXIT
 if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
+    rm -f r_${sequenceName}* r_*.seq
     die "Siril processing failed";
 fi
