@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 die () { echo "$1" >&2; exit 1; }
-usage () { die "usage: $0 -l lights-dir [-d darks-dir] [-f flats-dir] [-b biases-dir]"; }
+usage () { die "usage: $0 -l lights-dir -c config-file [-d darks-dir] [-f flats-dir] [-b biases-dir]"; }
 
 
 # shellcheck disable=SC2016
@@ -27,16 +27,21 @@ userLights=
 userDarks=
 userFlats=
 userBiases=
-while getopts "l:d:f:b:" i; do
+configFile=
+forceRegeneration=
+while getopts "Fl:d:f:b:c:" i; do
     case "$i" in
         l) userLights="${OPTARG%/}" ;;
         d) userDarks="${OPTARG%/}" ;;
         f) userFlats="${OPTARG%/}" ;;
+        F) forceRegeneration="forceRegeneration" ;;
         b) userBiases="${OPTARG%/}" ;;
+        c) configFile="$OPTARG" ;;
         *) usage ;;
     esac
 done
 [[ -d $userLights ]] || usage
+[[ -r $configFile ]] || usage
 
 configureSubframes () {
     local inputDir=$1
@@ -53,9 +58,13 @@ configureSubframes () {
         die "$masterType directory '$dir' not found"
     fi
 
-    if [[ -r "$dir/master-$masterType.fit" ]]; then
+    if [[ -n $forceRegeneration ]] && [[ $masterType != "bias" ]]; then
+        echo "\"${masterType}Dir\": \"$dir\""
+
+    elif [[ -r "$dir/master-$masterType.fit" ]]; then
         master="$dir/master-$masterType.fit"
         echo "\"master${masterType^}\": \"$master\""
+
     else
         echo "\"${masterType}Dir\": \"$dir\""
     fi
@@ -67,13 +76,19 @@ else
     lightConfig=$(configureSubframes "$userLights" "light")
 fi
 
-biasesConfig=$(configureSubframes "$userBiases" "bias")
-flatsConfig=$(configureSubframes "$userFlats" "flat")
-darksConfig=$(configureSubframes "$userDarks" "dark")
+if ! biasesConfig=$(configureSubframes "$userBiases" "bias"); then
+    die "Failed to config biases"
+fi
+if ! flatsConfig=$(configureSubframes "$userFlats" "flat"); then
+    die "Failed to config flats"
+fi
+if ! darksConfig=$(configureSubframes "$userDarks" "dark"); then
+    die "Failed to config darks"
+fi
 
 
 # Output config as JSON
-tee config.json <<EOF
+tee $configFile <<EOF
 {
     $lightConfig,
     $biasesConfig,

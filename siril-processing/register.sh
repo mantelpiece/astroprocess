@@ -23,6 +23,7 @@ while getopts "d:s:" i; do
         *) usage ;;
     esac
 done
+shift $(($OPTIND - 1))
 [[ -n $subsDir ]] || usage;
 [[ -n $sequenceName ]] || usage;
 

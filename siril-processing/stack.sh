@@ -34,6 +34,7 @@ done
 [[ -n $subsDir ]] || usage;
 [[ -n $sequenceName ]] || usage;
 [[ -n $outputFile ]] || usage;
+good "\nStacking subs..."
 
 
 script="requires 0.99.9

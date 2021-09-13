@@ -7,13 +7,28 @@ info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
 
 die () { echo "$1" >&2; exit 1; }
-
+usage () { die "usage: $0 -c config-file"; }
 
 hash jq 2>/dev/null || die "Missing dependency: jq";
 
 dir="$(dirname "$0")"
 
-[[ -r config.json ]] || die "Config has not been generated - run 00-config.sh and 01-generate-masters.sh";
+configFile=
+dryrun=
+while getopts "c:D" i; do
+    case "$i" in
+        c) configFile="$OPTARG" ;;
+        D) dryrun="dryrun" ;;
+        *) usage ;;
+    esac
+done
+[[ -n $configFile ]] || usage;
+[[ -r $configFile ]] || die "Config has not been generated - run 00-config.sh and 01-generate-masters.sh";
+
+if [[ -n $dryrun ]]; then
+    info "\n--- Running as dryrun"
+    export AP_DRYRUN="AP_DRYRUN"
+fi
 
 
 info "\n---- Configuring calibration"

@@ -7,11 +7,26 @@ info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
 
 die () { echo "$1" >&2; exit 1; }
-
+usage () { die "usage: $0 -c config-file"; }
 
 hash jq 2>/dev/null || die "Missing dependency: jq";
 
 dir="$(dirname "$0")"
+
+configFile=
+dryrun=
+while getopts "c:D" i; do
+    case "$i" in
+        c) configFile="$OPTARG" ;;
+        D) dryrun="DRYRUN" ;;
+        *) usage ;;
+    esac
+done
+
+[[ -r $configFile ]] || usage
+
+
+[[ -n $dryrun ]] && export AP_DRYRUN="AP_DRYRUN"
 
 
 # Convert NEF to FITS (no demosaicing)
@@ -43,7 +58,7 @@ dir="$(dirname "$0")"
 # * only subtract masterBias from darks if dark optimisation is used
 
 info "\n---- Parsing initial config"
-config=$(cat ./config.json)
+config=$(cat $configFile)
 echo "Initial config:"
 echo "$config"
 
@@ -67,8 +82,6 @@ setConfig () {
 }
 
 
-
-info "\n---- Generating masters"
 if [[ -n "$biasesDir" ]]; then
     info "\n---- Generating master bias"
     $dir/siril-processing/convertAndStackWithRejectionAndNoNorm.sh \
@@ -117,5 +130,5 @@ if [[ -n "$darksDir" ]]; then
 fi
 
 echo "Updated config with generated masters:"
-echo "$config" | tee .config.json
+echo "$config" | tee $configFile
 

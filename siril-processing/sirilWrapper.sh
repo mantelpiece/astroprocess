@@ -20,9 +20,14 @@ script="$2"
 [[ -n $script ]] || usage
 
 
-echo -e "\nRunning siril:"
-echo "Working dir: $workingDir"
-echo "Script: $script"
+echo "Siril working dir: $workingDir"
+echo "Siril script: $script"
 
-echo -e "\nSiril logs:"
-$sirilBin -d "$workingDir" -s <(echo "$script")
+echo -e "\nSiril execution:"
+if [[ -n $AP_DRYRUN ]]; then
+    echo "[DRYRUN]: $sirilBin"
+else
+    $sirilBin \
+        -d "$workingDir" \
+        -s <(echo "$script")
+fi

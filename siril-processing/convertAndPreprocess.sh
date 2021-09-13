@@ -13,7 +13,6 @@ usage () { die "usage: $0 -d subs-dir -s sequence-name -- PREPROCESS-OPTIONS:[-b
 dir=$(dirname "$0")
 
 
-echo "$@"
 subsDir=
 sequenceName=
 while getopts "d:s:" i; do
@@ -31,6 +30,8 @@ shift $(($OPTIND - 1))
 [[ -n $sequenceName ]] || usage;
 # Positional args after opt args are passed to preprocess
 preprocessArgs="$@"
+
+good "\nConverting and proprocessing subs..."
 
 script="requires 0.99.9
 convertraw $sequenceName
