@@ -8,7 +8,7 @@ info () { echo -e "\e[34m$*\e[0m"; }
 errr () { echo -e "\e[31m$*\e[0m"; }
 
 die () { errr "${1:-""}" >&2; exit "${2:-1}"; }
-usage () { die "usage: $0 -d subs-dir -s sequence-name -- PREPROCESS-OPTIONS:[-bias=bias-master|-flat=flat-master|-dark=dark-master|-cfa|-debayer|-equalize_cfa]"; }
+usage () { die "usage: $0 -d subs-dir -s sequence-name -- PREPROCESS-OPTIONS:[-bias=bias-master|-flat=flat-master|-dark=dark-master|-cfa|-debayer|-equalize_cfa|-stretch]"; }
 
 dir=$(dirname "$0")
 

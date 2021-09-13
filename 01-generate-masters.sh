@@ -98,19 +98,19 @@ if [[ -n "$flatsDir" ]]; then
     if [[ -z $masterBias ]]; then
         echo "WARNING generating master flat without using master bias"
         $dir/siril-processing/convertAndStack.sh \
-            -d "$flatsDir" -s "flat_" -a "rej" -n "-norm=mul" -o "master-flat" || die "Failed to generate master flat";
+            -d "$flatsDir" -s "flat_" -a "rej" -n "mul" -o "master-flat" || die "Failed to generate master flat";
     else
         bias="$(realpath --relative-to "$flatsDir" "$masterBias")"
-        echo "Using calibrating flats with bias $bias"
+        echo "Calibrating flats with bias $bias"
         $dir/siril-processing/convertAndPreprocess.sh \
-            -d "$flatsDir" -s "flat_" -- "'-bias=$bias'" || die "Failed to preprocess flats";
+            -d "$flatsDir" -s "flat_" -- "-bias=$bias" || die "Failed to preprocess flats";
         $dir/siril-processing/stack.sh \
-            -d "$flatsDir" -s "pp_flat_" -n "-norm=mul" -o "master-flat" || die "Failed to stack flats";
+            -d "$flatsDir" -s "pp_flat_" -a rej -n "mul" -o "master-flat" || die "Failed to stack flats";
     fi
     masterFlat="$flatsDir/master-flat.fit"
 
     config=$(setConfig "$config" "masterFlat" "$masterFlat")
-    good "Created master flat $masterFlat"
+    good "\nCreated master flat $masterFlat"
 fi
 
 

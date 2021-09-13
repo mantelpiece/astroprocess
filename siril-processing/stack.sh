@@ -16,8 +16,8 @@ subsDir=
 sequenceName=
 outputFile=
 algorithm="rej"
+rejection="3 3"
 normalisation="-nonorm"
-rejection="w 4 3"
 while getopts "d:s:o:n:a:r:" i; do
     case "$i" in
         d) subsDir="${OPTARG}" ;;
