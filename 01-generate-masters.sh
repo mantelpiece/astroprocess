@@ -57,10 +57,8 @@ done
 #
 # * only subtract masterBias from darks if dark optimisation is used
 
-info "\n---- Parsing initial config"
+info "--- Parsing initial config"
 config=$(cat $configFile)
-echo "Initial config:"
-echo "$config"
 
 lightDir=$(<<<$config jq -r '.lightDir // empty')
 noBias=$(<<<$config jq -r '.noBias // empty')
@@ -83,7 +81,7 @@ setConfig () {
 
 
 if [[ -n "$biasesDir" ]]; then
-    info "\n---- Generating master bias"
+    info "\n--- Generating master bias"
     $dir/siril-processing/convertAndStackWithRejectionAndNoNorm.sh \
         "$biasesDir" "bias_" "master-bias" || die "Failed to generate master bias";
     masterBias="$biasesDir/master-bias.fit"
@@ -94,7 +92,7 @@ fi
 
 
 if [[ -n "$flatsDir" ]]; then
-    info "\n---- Generating master flat"
+    info "\n--- Generating master flat"
     if [[ -z $masterBias ]]; then
         echo "WARNING generating master flat without using master bias"
         $dir/siril-processing/convertAndStack.sh \
@@ -115,7 +113,7 @@ fi
 
 
 if [[ -n "$darksDir" ]]; then
-    info "\n---- Generating master dark"
+    info "\n--- Generating master dark"
     if [[ -n $masterBias ]]; then
         echo "Not subtracting master bias from master dark"
         echo "Light frames SHOULD NOT BE callibrated with master bias unless dark optimisation is used"
@@ -131,4 +129,3 @@ fi
 
 echo "Updated config with generated masters:"
 echo "$config" | tee $configFile
-

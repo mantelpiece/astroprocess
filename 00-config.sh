@@ -4,25 +4,7 @@ die () { echo "$1" >&2; exit 1; }
 usage () { die "usage: $0 -l lights-dir -c config-file [-d darks-dir] [-f flats-dir] [-b biases-dir]"; }
 
 
-# shellcheck disable=SC2016
-: 'Input
-target: $NAME
-imagingDate: $IMAGING_DATE
-
-flats: $FLAT_DATE
-darks: $DARK_DATE
-biases: $ISO
-
-
-
-Output:
-Lights: $NAME/$DATE/LIGHT
-Darks: /_Darks/$DATE/DARK
-Flats: /_Flats/$DATE/FLAT
-Biases: /_Biases/$ISO/master-flat.fit
-'
 declare -A subDirs=( [dark]="DARK" [flat]="FLAT" [light]="LIGHT" [darkflat]="DARKFLAT" [bias]="BIAS" )
-
 userLights=
 userDarks=
 userFlats=
@@ -40,8 +22,13 @@ while getopts "Fl:d:f:b:c:" i; do
         *) usage ;;
     esac
 done
-[[ -d $userLights ]] || usage
-[[ -r $configFile ]] || usage
+shift $(($OPTIND - 1))
+
+
+[[ -d $userLights ]] || { echo "Failed to find lights dir $lightsDir"; usage; }
+touch "$configFile"
+[[ -r $configFile ]] || { echo "Cannot edit config file $configFile"; usage; }
+
 
 configureSubframes () {
     local inputDir=$1
@@ -88,6 +75,7 @@ fi
 
 
 # Output config as JSON
+echo "Configuration:"
 tee $configFile <<EOF
 {
     $lightConfig,
