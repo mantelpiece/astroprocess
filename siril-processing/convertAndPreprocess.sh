@@ -31,13 +31,13 @@ shift $(($OPTIND - 1))
 # Positional args after opt args are passed to preprocess
 preprocessArgs="$@"
 
-good "\nConverting and proprocessing subs..."
+good "Converting and proprocessing subs..."
 
 script="requires 0.99.9
 convertraw $sequenceName
 preprocess $sequenceName $preprocessArgs"
 
-trap 'rm -f ${sequenceName}* pp_*.seq' EXIT
+trap 'rm -f $subsDir/${sequenceName}*.fit $subsDir/${sequenceName}.seq' EXIT
 if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
     rm -f pp_${sequenceName}*,pp_*.seq
     die "Siril processing failed";

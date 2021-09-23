@@ -27,11 +27,12 @@ shift $(($OPTIND - 1))
 [[ -n $subsDir ]] || usage;
 [[ -n $sequenceName ]] || usage;
 
+good "Registering subs..."
 
 script="requires 0.99.9
 register $sequenceName $@"
 
-trap 'rm -f ${sequenceName}*' EXIT
+trap 'rm -f $subsDir/${sequenceName}*' EXIT
 if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
     rm -f r_${sequenceName}* r_*.seq
     die "Siril processing failed";
