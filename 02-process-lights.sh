@@ -22,8 +22,10 @@ while getopts "c:D" i; do
         *) usage ;;
     esac
 done
+
+
 [[ -n $configFile ]] || usage;
-[[ -r $configFile ]] || die "Config has not been generated - run 00-config.sh and 01-generate-masters.sh";
+[[ -f $configFile ]] || die "Config has not been generated - run 00-config.sh and 01-generate-masters.sh";
 
 if [[ -n $dryrun ]]; then
     info "--- Running as dryrun"
@@ -32,12 +34,12 @@ fi
 
 
 info "--- Configuring calibration"
-calibration=
-lightDir=$(<config.json jq -r '.lightDir')
+lightDir=$(<$configFile jq -r '.lightDir')
 
-masterBias=$(<config.json jq -r '.masterBias // empty')
-masterFlat=$(<config.json jq -r '.masterFlat // empty')
-masterDark=$(<config.json jq -r '.masterDark // empty')
+masterBias=$(<$configFile jq -r '.masterBias // empty')
+masterFlat=$(<$configFile jq -r '.masterFlat // empty')
+masterDark=$(<$configFile jq -r '.masterDark // empty')
+preprocessOnly=$(<$configFile jq -r '.preprocessOnly // empty')
 
 stackName=
 fullPath=$(realpath $lightDir)
@@ -48,6 +50,8 @@ processingDate=$(date +'%Y%m%dT%H%M')
 stackName="stack_${targetName}_${imagingDate}_${processingDate}"
 outputStack="../Stacks/${stackName}"
 mkdir -p "$lightDir/../Stacks"
+
+calibration=
 
 
 if [[ -n $masterDark ]]; then
@@ -78,6 +82,11 @@ if ! $dir/siril-processing/convertAndPreprocess.sh \
 fi
 rm -f ${lightDir}/light_*.fit
 currentSeq="pp_$currentSeq"
+
+
+if [[ -n "$preprocessOnly" ]]; then
+    exit
+fi
 
 
 info "\n--- Registering preprocessed subs"

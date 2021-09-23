@@ -11,7 +11,8 @@ userFlats=
 userBiases=
 configFile=
 forceRegeneration=
-while getopts "Fl:d:f:b:c:" i; do
+preprocessOnly=
+while getopts ":Fl:d:f:b:c:-" i; do
     case "$i" in
         l) userLights="${OPTARG%/}" ;;
         d) userDarks="${OPTARG%/}" ;;
@@ -19,10 +20,13 @@ while getopts "Fl:d:f:b:c:" i; do
         F) forceRegeneration="forceRegeneration" ;;
         b) userBiases="${OPTARG%/}" ;;
         c) configFile="$OPTARG" ;;
+        -) break ;;
         *) usage ;;
     esac
 done
-shift $(($OPTIND - 1))
+shift $(( $OPTIND - 1 ))
+
+[[ $@ =~ --preprocess-only ]] && preprocessOnly="preprocessOnly"
 
 
 [[ -d $userLights ]] || { echo "Failed to find lights dir $lightsDir"; usage; }
@@ -78,6 +82,7 @@ fi
 echo "Configuration:"
 tee $configFile <<EOF
 {
+    $( [[ -n $preprocessOnly ]] && echo '"preprocessOnly": true,')
     $lightConfig,
     $biasesConfig,
     $flatsConfig,
