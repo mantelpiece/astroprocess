@@ -82,8 +82,8 @@ setConfig () {
 
 if [[ -n "$biasesDir" ]]; then
     info "\n--- Generating master bias"
-    $dir/siril-processing/convertAndStackWithRejectionAndNoNorm.sh \
-        "$biasesDir" "bias_" "master-bias" || die "Failed to generate master bias";
+    $dir/siril-processing/convertAndStack.sh \
+        -b "$biasesDir" -s "bias_" -o "master-bias" -a rej -n "-nonorm" || die "Failed to generate master bias";
     masterBias="$biasesDir/master-bias.fit"
 
     config=$(setConfig "$config" "masterBias" "$masterBias")
