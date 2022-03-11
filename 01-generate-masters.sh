@@ -101,7 +101,7 @@ if [[ -n "$flatsDir" ]]; then
         bias="$(realpath --relative-to "$flatsDir" "$masterBias")"
         echo "Calibrating flats with bias $bias"
         $dir/siril-processing/convertAndPreprocess.sh \
-            -d "$flatsDir" -s "flat_" -- "-bias=$bias" || die "Failed to preprocess flats";
+            -d "$flatsDir" -s "flat_" -- "-bias=$bias" -equalize_cfa -debayer -stretch || die "Failed to preprocess flats";
         $dir/siril-processing/stack.sh \
             -d "$flatsDir" -s "pp_flat_" -a rej -n "mul" -o "master-flat" || die "Failed to stack flats";
     fi

@@ -38,7 +38,7 @@ done
 good "Stacking subs..."
 
 
-script="requires 0.99.9
+script="requires 1.0.0
 stack $sequenceName $algorithm $rejection $normalisation -out=$outputFile.fit"
 
 

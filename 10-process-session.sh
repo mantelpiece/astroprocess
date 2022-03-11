@@ -12,6 +12,7 @@ usage () { die "usage: $0 -l lights-dir -b bias -d darks-dir -f flats-dir -D -F
     [-bdf]: specify bias/darks/flat subs directory
     [-D]: run as dry-run
     [-F]: force regeneration of masters
+    [--preprocess-only]: Preprocess lights to stack multiple sessions
 
     Assumes that within the specified directory, all subs are within a folder named
     LIGHT, BIAS, DARK, FLAT as appropriate"; }
@@ -49,7 +50,6 @@ info "\n\n+++ 2. Generating masters"
 if ! "$dir/01-generate-masters.sh" -c "$configFile"; then
     die "Failed to configure session processing"
 fi
-
 
 info "\n\n+++ 3. Processing lights"
 if ! "$dir/02-process-lights.sh" -c "$configFile"; then

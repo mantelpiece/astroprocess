@@ -36,7 +36,7 @@ done
 [[ -n $outputFile ]] || usage;
 
 
-script="requires 0.99.9
+script="requires 1.0.0
 convertraw $sequenceName
 stack $sequenceName $algorithm $rejection $normalisation -out=$outputFile.fit"
 

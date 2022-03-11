@@ -33,7 +33,7 @@ preprocessArgs="$@"
 
 good "Converting and proprocessing subs..."
 
-script="requires 0.99.9
+script="requires 1.0.0
 convertraw $sequenceName
 preprocess $sequenceName $preprocessArgs"
 

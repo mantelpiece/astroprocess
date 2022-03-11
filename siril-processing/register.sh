@@ -29,7 +29,7 @@ shift $(($OPTIND - 1))
 
 good "Registering subs..."
 
-script="requires 0.99.9
+script="requires 1.0.0
 register $sequenceName $@"
 
 trap 'rm -f $subsDir/${sequenceName}*' EXIT
