@@ -9,7 +9,8 @@ usage () { die "usage: $0 [-a] lights_dir
 
 lightsDir="$1"
 [[ -d $lightsDir ]] || usage;
-liveDir="$HOME/live-stack"
+liveDir="/mnt/c/astrophotography/live-stack"
+# liveDir="$HOME/live-stack"
 mkdir -p "$liveDir"
 
 
@@ -19,102 +20,75 @@ echo "  live stack: $liveDir"
 echo ""
 echo "Stacking until cancelled (ctrl-c)"
 
+LOG="$liveDir/log.txt"
+
+
+convertToFit () {
+    local inputFile="$1"
+    local outputFit="$2"
+
+    cp "$inputFile" "$liveDir"
+
+    convertFrameSsf="requires 1.0.0
+setext fit
+convertraw LIGHT_ -debayer"
+
+    siril-cli -s <(echo "$convertFrameSsf") -d "$liveDir" >>$LOG || die "Failed to convert raw"
+    mv "$liveDir/LIGHT_00001.fit" "$liveDir/$outputFit" || die "Failed to rename converted raw"
+}
+
+
+addFrameToStack () {
+    echo "--- Stacking...."
+    rm -f "$liveDir"/*.seq
+    liveStackSsf="requires 1.0.0
+setext fit
+set16bits
+register main
+stack r_main sum -nonorm
+load r_main_stacked
+resample 0.5
+savejpg stack"
+    siril-cli -s <(echo "$liveStackSsf") -d "$liveDir" >>$LOG 2>&1 || die "Failed to stack"
+
+    mv $liveDir/r_main_stacked.fit $liveDir/main_00001.fit || die "Failed to rename stack"
+}
+
+
 i=1
 while true; do
     processed="$liveDir/processed.txt"
     touch "$processed"
     numProcessed="$(wc -l <"$processed" | awk '{print $1}')"
 
-    unprocessedFiles="$(grep -v -x -f "$processed" <(find "$lightsDir" -name '*.nef'))"
-    numUnprocessed="$(wc -l <<<"$unprocessedFiles")"
+    # unprocessedFiles="$(grep -v -x -f "$processed" <(find "$lightsDir" -name 'LIGHT*.nef'))"
+    unprocessedFiles=$(comm -23 <(find "$lightsDir" -name 'LIGHT*.nef') "$processed" | cut -f1 -d' ')
+    numUnprocessed=0
+    [[ -n $unprocessedFiles ]] && numUnprocessed="$(wc -l <<<"$unprocessedFiles")"
 
-    if [[ $numUnprocessed -lt 2 ]]; then
-        echo "... waiting for new sub"
+    echo "... waiting for new sub"
+    if [[ $numUnprocessed -lt 1 ]]; then
         sleep 10
         continue
     fi
 
-    echo ""
-    echo "---- Found $numUnprocessed unprocessed files ($numProcessed processed)"
-    if [[ "$numProcessed" -lt 2 ]]; then
-        file1=$(head -n1 <<<"$unprocessedFiles")
-        file2=$(head -n2 <<<"$unprocessedFiles" | tail -n1)
-        echo "Processing 2 files into fresh stack
-        $file1 and
-        $file2"
-        echo "Copying files"
-        cp "$file1" "$liveDir"/Live_00001.nef
-        cp "$file2" "$liveDir"/Live_00002.nef
-
-        toProcess="$file1
-$file2"
+    fileToProcess=$(head -n1 <<<"$unprocessedFiles")
+    echo "Processing $(basename "$fileToProcess")"
+    if [[ ! -r $liveDir/main_00001.fit ]]; then
+        convertToFit "$fileToProcess" main_00001.fit
+        echo "$fileToProcess" >>"$processed"
     else
-        file1=$(head -n1 <<<"$unprocessedFiles")
-        echo "Appending 1 file to existing stack"
-        echo "... copying $file1"
-        cp "$file1" "$liveDir"/Live_00001.nef
-        toProcess="$file1"
+        convertToFit "$fileToProcess" main_00002.fit
+
+        echo "Stacking imaging $i"
+        rm -f "$liveDir"/*.seq
+        addFrameToStack
+        echo "$fileToProcess" >>"$processed"
     fi
-    echo "... copy complete"
 
+    echo "Cleanup..."
+    rm -f "$liveDir"/*.seq "$liveDir"/r_*.fit "$liveDir"/pp_*.fit "$liveDir"/*.nef >>$LOG
+    echo ""
 
-    liveStackSsf="requires 0.99.9
-convertraw Live_
-preprocess Live_ -cfa -equalize_cfa -debayer
-register pp_Live_
-stack r_pp_Live_ sum -nonorm -out=Live_00002.fit
-load Live_00002.fit
-asinh 10
-rmgreen 1
-savejpg live-$(printf '%05d' $i) 100"
-
-    echo "--- Stacking...."
-    time siril-cli -s <(echo "$liveStackSsf") -d "$liveDir" >/dev/null
-    echo "$toProcess" >>"$processed"
-    echo "Stack complete"
-
-    echo "---- Latest stack at $liveDir/live.jpg"
-    rm "$liveDir"/*.seq "$liveDir"/r_*.fit "$liveDir"/pp_*.fit "$liveDir"/*.nef
-    i=$((i+1))
+    i=$(( i + 1 ))
 done
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-cp "$file1" "$liveDir"/Live_00001.nef
-cp "$file2" "$liveDir"/Live_00002.nef
-
-liveStackSsf="requires 0.99.9
-convertraw Live_
-preprocess Live_ -cfa -equalize_cfa -debayer
-register pp_Live_
-stack r_pp_Live_ sum -nonorm -out=Live_00002.fit
-load Live_00002.fit
-asinh 10
-rmgreen
-savejpg live.jpg 100"
-
-siril-cli -s <(echo "$liveStackSsf") -d "$liveDir"
-rm "$liveDir"/*.seq "$liveDir"/pp_*.fit "$liveDir"/r_*.fit
