@@ -33,12 +33,31 @@ preprocessArgs="$@"
 
 good "Converting and proprocessing subs..."
 
+p1="pp_"
+s1="$p1$sequenceName"
+
 script="requires 1.0.0
 convertraw $sequenceName
-preprocess $sequenceName $preprocessArgs"
+preprocess $sequenceName -prefix=$p1 $preprocessArgs"
 
-trap 'rm -f $subsDir/${sequenceName}*.fit $subsDir/${sequenceName}.seq' EXIT
 if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
-    rm -f pp_${sequenceName}*,pp_*.seq
+    rm -f $subsDir/$s1{*.fit,.seq}
     die "Siril processing failed";
+fi
+rm -f $subsDir/${sequenceName}{*.fit,.seq}
+
+
+subsky=
+if [[ -n $subsky ]]; then
+    p2="bkg_"
+    s2="$p2$s1"
+
+    script="requires 1.0.0
+    seqsubsky $s1 4 -prefix=$p2"
+
+    if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
+        rm -f $subsDir/$s2{*.fit,.seq}
+        die "Siril processing failed";
+    fi
+    rm -f $subsDir/${s1}{*.fit,.seq}
 fi

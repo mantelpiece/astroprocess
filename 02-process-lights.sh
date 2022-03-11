@@ -42,12 +42,14 @@ masterDark=$(<$configFile jq -r '.masterDark // empty')
 preprocessOnly=$(<$configFile jq -r '.preprocessOnly // empty')
 
 stackName=
+# Assuming fullpath = .../<TARGET>/<DATE>/LIGHT
 fullPath=$(realpath $lightDir)
-imagingDate=${fullPath##*/LIGHT}
-sansDate=${fullPath%/*}
-targetName=${sansDate##*/}
+imagingDate=$(basename ${fullPath%/*} | sed -e 's/-//g')
+targetName=$(basename ${fullPath%/*/*})
+
+
 processingDate=$(date +'%Y%m%dT%H%M')
-stackName="stack_${targetName}_${imagingDate}_${processingDate}"
+stackName="${imagingDate}_${targetName}_${processingDate}"
 outputStack="../Stacks/${stackName}"
 mkdir -p "$lightDir/../Stacks"
 
@@ -80,7 +82,8 @@ if ! $dir/siril-processing/convertAndPreprocess.sh \
     rm -f ${lightDir}/{light_,pp_}*.fit
     die "Failed to preprocess lights"
 fi
-rm -f ${lightDir}/light_*.fit
+rm -f ${lightDir}/$currentSeq*.fit
+rm -f ${lightDir}/p1_*.fit
 currentSeq="pp_$currentSeq"
 
 
