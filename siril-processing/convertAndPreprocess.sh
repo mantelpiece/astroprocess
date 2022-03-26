@@ -15,6 +15,7 @@ dir=$(dirname "$0")
 
 subsDir=
 sequenceName=
+subsky=
 while getopts "d:s:" i; do
     case "$i" in
         d) subsDir="${OPTARG}" ;;
@@ -28,7 +29,9 @@ shift $(($OPTIND - 1))
 
 [[ -n $subsDir ]] || usage;
 [[ -n $sequenceName ]] || usage;
+
 # Positional args after opt args are passed to preprocess
+[[ $@ = *--subsky* ]] && subsky="subsky"
 preprocessArgs="$@"
 
 good "Converting and proprocessing subs..."
@@ -38,7 +41,8 @@ s1="$p1$sequenceName"
 
 script="requires 1.0.0
 convertraw $sequenceName
-preprocess $sequenceName -prefix=$p1 $preprocessArgs"
+preprocess $sequenceName -prefix=$p1 $preprocessArgs
+seqstat $s1 $s1.stats.csv basic"
 
 if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
     rm -f $subsDir/$s1{*.fit,.seq}
@@ -47,17 +51,21 @@ fi
 rm -f $subsDir/${sequenceName}{*.fit,.seq}
 
 
-subsky=
 if [[ -n $subsky ]]; then
     p2="bkg_"
     s2="$p2$s1"
 
     script="requires 1.0.0
-    seqsubsky $s1 4 -prefix=$p2"
+seqsubsky $s1 4 -prefix=$p2
+seqstat $s2 $s2.stats.csv basic"
 
     if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
         rm -f $subsDir/$s2{*.fit,.seq}
         die "Siril processing failed";
     fi
     rm -f $subsDir/${s1}{*.fit,.seq}
+
+    for f in $subsDir/${s2}*.fit; do
+        mv $f ${f/$p2}
+    done
 fi

@@ -77,13 +77,14 @@ fi
 
 info "\n--- Pre-processing light subs"
 currentSeq="light_"
+subsky="--subsky"
 if ! $dir/siril-processing/convertAndPreprocess.sh \
-        -d $lightDir -s $currentSeq -- $calibration -equalize_cfa -debayer -stretch; then
+        -d $lightDir -s $currentSeq -- $subsky $calibration -equalize_cfa -debayer -stretch; then
     rm -f ${lightDir}/{light_,pp_}*.fit
     die "Failed to preprocess lights"
 fi
-rm -f ${lightDir}/$currentSeq*.fit
-rm -f ${lightDir}/p1_*.fit
+rm -f ${lightDir}/{$currentSeq*.fit,$currentSeq.seq}
+
 currentSeq="pp_$currentSeq"
 
 
