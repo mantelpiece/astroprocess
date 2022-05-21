@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -u
+set -euo pipefail
 
 good () { echo -e "\e[32m$*\e[0m"; }
 info () { echo -e "\e[34m$*\e[0m"; }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -u
+set -euo pipefail
 
 die () { echo "$1" >&2; exit 1; }
 good () { echo -e "\e[32m$*\e[0m"; }

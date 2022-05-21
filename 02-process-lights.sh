@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -u
+set -euo pipefail
 
 good () { echo -e "\e[32m$*\e[0m"; }
 info () { echo -e "\e[34m$*\e[0m"; }
@@ -94,6 +94,7 @@ fi
 
 
 info "\n--- Registering preprocessed subs"
+drizzle="-z"
 if ! $dir/siril-processing/register.sh -d "$lightDir" -s "$currentSeq"; then
     rm -f ${lightDir}/{light_,pp_,r_pp}*.fit
     die "Failed to register light subs"

@@ -36,36 +36,65 @@ preprocessArgs="$@"
 
 good "Converting and proprocessing subs..."
 
-p1="pp_"
-s1="$p1$sequenceName"
+currentSeq="$sequenceName"
 
+#
+# Stage: preprocess
+#
+pp="pp_"
 script="requires 1.0.0
-convertraw $sequenceName
-preprocess $sequenceName -prefix=$p1 $preprocessArgs
-seqstat $s1 $s1.stats.csv basic"
+convertraw $currentSeq
+preprocess $currentSeq -prefix=$pp $preprocessArgs
+seqstat $pp$currentSeq $pp$currentSeq.stats.csv basic"
 
 if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
-    rm -f $subsDir/$s1{*.fit,.seq}
+    rm -f $subsDir/$pp{*.fit,.seq}
     die "Siril processing failed";
 fi
-rm -f $subsDir/${sequenceName}{*.fit,.seq}
+rm -f $subsDir/${currentSeq}{*.fit,.seq}
+currentSeq="$pp$currentSeq"
 
 
+#
+# Stage: cropp
+#
+#crop="2000,1000,2000,2000"
+crop=
+if [[ -n "$crop" ]]; then
+    pCrop="cropped_"
+    if ! $dir/cropSeq.sh \
+            -d $subsDir -s $currentSeq -c "$crop"; then
+        rm -f $subsDir/$pCrop*.fit
+        die "Failed to crop lights"
+    fi
+
+    rm -f $subsDir/$currentSeq{*.fit,.seq}
+
+    # Rename cropped subs to pp_...
+    for f in $subsDir/$pCrop*.fit; do
+        mv $f ${f/$pCrop}
+    done
+fi
+
+
+#
+# Stage: Subtract sky
+#
 if [[ -n $subsky ]]; then
-    p2="bkg_"
-    s2="$p2$s1"
+    pBkg="bkg_"
 
     script="requires 1.0.0
-seqsubsky $s1 4 -prefix=$p2
-seqstat $s2 $s2.stats.csv basic"
+seqsubsky $currentSeq 4 -prefix=$pBkg
+seqstat ${pBkg}$currentSeq ${pBkg}$currentSeq.stats.csv basic"
 
     if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
-        rm -f $subsDir/$s2{*.fit,.seq}
+        rm -f $subsDir/$pBkg{*.fit,.seq}
         die "Siril processing failed";
     fi
-    rm -f $subsDir/${s1}{*.fit,.seq}
+    rm -f $subsDir/${currentSeq}{*.fit,.seq}
 
-    for f in $subsDir/${s2}*.fit; do
-        mv $f ${f/$p2}
+    # Rename subskyed subs to pp_...
+    for f in $subsDir/$pBkg*.fit; do
+        mv $f ${f/$pBkg}
     done
 fi

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 die () { echo "$1" >&2; exit 1; }
 usage () { die "usage: $0 -l lights-dir -c config-file [-d darks-dir] [-f flats-dir] [-b biases-dir] [--preprocess-only]"; }
 

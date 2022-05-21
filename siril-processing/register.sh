@@ -14,10 +14,12 @@ dir=$(dirname "$0")
 
 subsDir=
 sequenceName=
-while getopts "d:s:" i; do
+drizzle=
+while getopts "d:s:z" i; do
     case "$i" in
         d) subsDir="${OPTARG}" ;;
         s) sequenceName="${OPTARG}" ;;
+        z) drizzle="-drizzle" ;;
         -) break ;;
         ?) usage ;;
         *) usage ;;
@@ -30,7 +32,7 @@ shift $(($OPTIND - 1))
 good "Registering subs..."
 
 script="requires 1.0.0
-register $sequenceName $@"
+register $sequenceName $drizzle"
 
 trap 'rm -f $subsDir/${sequenceName}*' EXIT
 if ! "$dir/sirilWrapper.sh" "$subsDir" "$script"; then
