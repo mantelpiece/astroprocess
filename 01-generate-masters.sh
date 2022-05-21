@@ -83,7 +83,7 @@ setConfig () {
 if [[ -n "$biasesDir" ]]; then
     info "\n--- Generating master bias"
     $dir/siril-processing/convertAndStack.sh \
-        -b "$biasesDir" -s "bias_" -o "master-bias" -a rej -n "-nonorm" || die "Failed to generate master bias";
+        -d "$biasesDir" -s "bias_" -o "master-bias" -a rej || die "Failed to generate master bias";
     masterBias="$biasesDir/master-bias.fit"
 
     config=$(setConfig "$config" "masterBias" "$masterBias")
@@ -120,7 +120,7 @@ if [[ -n "$darksDir" ]]; then
     fi
 
     $dir/siril-processing/convertAndStack.sh \
-        -d "$darksDir" -s "dark_" -a rej -n "-nonorm" -o "master-dark" || die "Failed to generate master dark";
+        -d "$darksDir" -s "dark_" -a rej -o "master-dark" || die "Failed to generate master dark";
     masterDark="$darksDir/master-dark.fit"
 
     config=$(setConfig "$config" "masterDark" "$masterDark")
