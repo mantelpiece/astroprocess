@@ -1,5 +1,5 @@
 exifread==2.3.2
 
-pytest==6.2.4
+pytest==9.0.3
 pytest-clarity==0.3.0a0
 six==1.16.0
